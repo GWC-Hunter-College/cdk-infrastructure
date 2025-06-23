@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/aws/aws-cdk-go/awscdk/v2"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awssqs"
+	"github.com/aws/aws-cdk-go/awscdk/v2"        // core
+	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"  // ← FIXED: v2 path!
+	"github.com/aws/aws-cdk-go/awscdk/v2/awssqs" // SQS (demo queue)
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 )
@@ -24,8 +25,11 @@ func NewCdkInfrastructureStack(scope constructs.Construct, id string, props *Cdk
 	queue := awssqs.NewQueue(stack, jsii.String("CdkInfrastructureQueue"), &awssqs.QueueProps{
 		VisibilityTimeout: awscdk.Duration_Seconds(jsii.Number(300)),
 	})
-	_ = queue   // or add Outputs / other logic
+	_ = queue // or add Outputs / other logic
 
+	awss3.NewBucket(stack, jsii.String("MyFirstBucket"), &awss3.BucketProps{
+		Versioned: jsii.Bool(true),
+	})
 
 	return stack
 }
