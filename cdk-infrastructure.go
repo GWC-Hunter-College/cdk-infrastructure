@@ -8,17 +8,18 @@ import (
 	stack "cdk-infrastructure/internal/stack"
 )
 
-type FrontendStackProps struct {
-	awscdk.StackProps
-}
+// type FrontendStackProps struct {
+// 	awscdk.StackProps
+// }
 
-type TutorialStackProps struct {
-	awscdk.StackProps
-}
+// type TutorialStackProps struct {
+// 	awscdk.StackProps
+// }
 
-type ApiStackProps struct {
-	awscdk.StackProps
-}
+// type ApiStackProps struct {
+// 	awscdk.StackProps
+// 	ImagesBucket awss3.IBucket
+// }
 
 func main() {
 	defer jsii.Close()
@@ -31,10 +32,17 @@ func main() {
 		},
 	})
 
+	images := stack.NewStorageStack(app, "StorageStack", &stack.StorageStackProps{
+		awscdk.StackProps{
+			Env: env(),
+		},
+	})
+
 	stack.NewApiStack(app, "ApiStack", &stack.ApiStackProps{
 		awscdk.StackProps{
 			Env: env(),
 		},
+		images.Bucket,
 	})
 
 	// tutorial.NewTutorial(app, "CdkInfrastructureStack", &tutorial.TutorialStackProps{
