@@ -1,37 +1,20 @@
 package main
 
 import (
-	"github.com/aws/aws-cdk-go/awscdk/v2"        // core
-	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"  // ← FIXED: v2 path!
-	"github.com/aws/aws-cdk-go/awscdk/v2/awssqs" // SQS (demo queue)
-	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/aws/aws-cdk-go/awscdk/v2" // core
+
 	"github.com/aws/jsii-runtime-go"
+
+	Frontend "cdk-infrastructure/internal/stack"
+	tutorial "cdk-infrastructure/internal/stack"
 )
 
-type CdkInfrastructureStackProps struct {
+type FrontendStackProps struct {
 	awscdk.StackProps
 }
 
-func NewCdkInfrastructureStack(scope constructs.Construct, id string, props *CdkInfrastructureStackProps) awscdk.Stack {
-	var sprops awscdk.StackProps
-	if props != nil {
-		sprops = props.StackProps
-	}
-	stack := awscdk.NewStack(scope, &id, &sprops)
-
-	// The code that defines your stack goes here
-
-	// example resource
-	queue := awssqs.NewQueue(stack, jsii.String("CdkInfrastructureQueue"), &awssqs.QueueProps{
-		VisibilityTimeout: awscdk.Duration_Seconds(jsii.Number(300)),
-	})
-	_ = queue // or add Outputs / other logic
-
-	awss3.NewBucket(stack, jsii.String("MyFirstBucket"), &awss3.BucketProps{
-		Versioned: jsii.Bool(true),
-	})
-
-	return stack
+type TutorialStackProps struct {
+	awscdk.StackProps
 }
 
 func main() {
@@ -39,7 +22,12 @@ func main() {
 
 	app := awscdk.NewApp(nil)
 
-	NewCdkInfrastructureStack(app, "CdkInfrastructureStack", &CdkInfrastructureStackProps{
+	Frontend.NewFrontendStack(app, "TestFrontendStack", &Frontend.FrontendStackProps{
+		awscdk.StackProps{
+			Env: env(),
+		},
+	})
+	tutorial.NewTutorial(app, "CdkInfrastructureStack", &tutorial.TutorialStackProps{
 		awscdk.StackProps{
 			Env: env(),
 		},
