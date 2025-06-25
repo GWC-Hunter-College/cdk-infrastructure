@@ -5,8 +5,7 @@ import (
 
 	"github.com/aws/jsii-runtime-go"
 
-	Frontend "cdk-infrastructure/internal/stack"
-	tutorial "cdk-infrastructure/internal/stack"
+	stack "cdk-infrastructure/internal/stack"
 )
 
 type FrontendStackProps struct {
@@ -17,21 +16,32 @@ type TutorialStackProps struct {
 	awscdk.StackProps
 }
 
+type ApiStackProps struct {
+	awscdk.StackProps
+}
+
 func main() {
 	defer jsii.Close()
 
 	app := awscdk.NewApp(nil)
 
-	Frontend.NewFrontendStack(app, "FrontendStack", &Frontend.FrontendStackProps{
+	stack.NewFrontendStack(app, "FrontendStack", &stack.FrontendStackProps{
 		awscdk.StackProps{
 			Env: env(),
 		},
 	})
-	tutorial.NewTutorial(app, "CdkInfrastructureStack", &tutorial.TutorialStackProps{
+
+	stack.NewApiStack(app, "ApiStack", &stack.ApiStackProps{
 		awscdk.StackProps{
 			Env: env(),
 		},
 	})
+
+	// tutorial.NewTutorial(app, "CdkInfrastructureStack", &tutorial.TutorialStackProps{
+	// 	awscdk.StackProps{
+	// 		Env: env(),
+	// 	},
+	// })
 
 	app.Synth(nil)
 }

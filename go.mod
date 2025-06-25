@@ -7,6 +7,8 @@ toolchain go1.24.3
 require (
 	github.com/aws/aws-cdk-go/awscdk v1.204.0-devpreview
 	github.com/aws/aws-cdk-go/awscdk/v2 v2.202.0
+	github.com/aws/aws-cdk-go/awscdklambdagoalpha/v2 v2.202.0-alpha.0
+	github.com/aws/aws-lambda-go v1.49.0
 	github.com/aws/constructs-go/constructs/v10 v10.4.2
 	github.com/aws/jsii-runtime-go v1.112.0
 )
