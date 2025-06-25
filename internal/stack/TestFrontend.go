@@ -25,9 +25,9 @@ func NewFrontendStack(scope constructs.Construct, id string, props *FrontendStac
 	// The code that defines your stack goes here
 
 	websiteBucket := awss3.NewBucket(stack,
-		jsii.String("testBucket"), // logical ID
+		jsii.String("GwcWebsiteBucket"), // logical ID
 		&awss3.BucketProps{
-			BucketName:        jsii.String("test-site-for-hunter-kyle"),
+			BucketName:        jsii.String("gwc-club-site"),
 			PublicReadAccess:  jsii.Bool(false),
 			RemovalPolicy:     awscdk.RemovalPolicy_DESTROY,
 			AutoDeleteObjects: jsii.Bool(true),
@@ -39,7 +39,7 @@ func NewFrontendStack(scope constructs.Construct, id string, props *FrontendStac
 	})
 
 	// authorization for the s3 bucket through oai
-	cloudfrontOAI := awscloudfront.NewOriginAccessIdentity(stack, jsii.String("CloudFrontOAI"), &awscloudfront.OriginAccessIdentityProps{})
+	cloudfrontOAI := awscloudfront.NewOriginAccessIdentity(stack, jsii.String("FrontendOAI"), &awscloudfront.OriginAccessIdentityProps{})
 
 	websiteBucket.GrantRead(cloudfrontOAI, nil)
 

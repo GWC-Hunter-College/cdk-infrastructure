@@ -22,7 +22,7 @@ func main() {
 
 	app := awscdk.NewApp(nil)
 
-	Frontend.NewFrontendStack(app, "TestFrontendStack", &Frontend.FrontendStackProps{
+	Frontend.NewFrontendStack(app, "FrontendStack", &Frontend.FrontendStackProps{
 		awscdk.StackProps{
 			Env: env(),
 		},
