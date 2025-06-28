@@ -12,8 +12,8 @@ type StorageStackProps struct {
 }
 
 type StorageStack struct {
-	awscdk.Stack
-	Bucket awss3.Bucket
+	Stackprops awscdk.Stack
+	Bucket     awss3.Bucket
 }
 
 func NewStorageStack(scope constructs.Construct, id string, props *StorageStackProps) *StorageStack {
@@ -53,5 +53,5 @@ func NewStorageStack(scope constructs.Construct, id string, props *StorageStackP
 		Value: imageBucket.BucketName(),
 	})
 
-	return &StorageStack{Stack: stack, Bucket: imageBucket}
+	return &StorageStack{Stackprops: stack, Bucket: imageBucket}
 }
