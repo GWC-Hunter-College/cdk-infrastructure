@@ -37,12 +37,17 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
 	// The code that defines your stack goes here
-
+	//  =======================================
+	// Api Creation
+	//  =======================================
 	// create HTTP API
 	httpApi := awsapigatewayv2.NewHttpApi(stack, jsii.String("ClubEventApi"), &awsapigatewayv2.HttpApiProps{
 		ApiName: jsii.String("ClubEventApi"),
 	})
 
+	//  =======================================
+	//  Test ping and s3 image storage test
+	//  =======================================
 	// create ping lambda function
 	getHandler := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("PingLambda"), &awscdklambdagoalpha.GoFunctionProps{
 		Entry: jsii.String("./lambda/ping/main.go"),
@@ -81,25 +86,9 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		),
 	})
 
-	lambdaSg := createSecurityGroup(stack, props.NetworkStackData.Vpc, "lambda-to-rds")
-	// lambdaSg.AddEgressRule(
-	// 	awsec2.Peer_AnyIpv4(),
-	// 	awsec2.Port_Tcp(jsii.Number(3306)),
-	// 	jsii.String("Allow connections to the database (RDS)."),
-	// 	jsii.Bool(false))
-	lambdaSg.AddEgressRule(
-		props.DatabaseStackData.DbSecurityGroup,
-		awsec2.Port_Tcp(jsii.Number(3306)),
-		jsii.String("Allow connections to the database (RDS)."),
-		jsii.Bool(false),
-	)
-	// props.DatabaseStackData.DbSecurityGroup.
-	// 	AddIngressRule(
-	// 		lambdaSg,
-	// 		awsec2.Port_Tcp(jsii.Number(5432)),
-	// 		jsii.String("Lambda → Postgres"),
-	// 		jsii.Bool(false),
-	// 	)
+	//  =======================================
+	//  Lamnds to rds
+	//  =======================================
 
 	dbTestFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("DBTestFunction"), &awscdklambdagoalpha.GoFunctionProps{
 		Entry:      jsii.String("lambda/db-test/main.go"), // path to folder with main.go
@@ -114,7 +103,7 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		Vpc: props.NetworkStackData.Vpc,
 		SecurityGroups: &[]awsec2.ISecurityGroup{
 			props.NetworkStackData.LambdaSecretsManagerSg,
-			lambdaSg,
+			props.NetworkStackData.LambdaSecurityGroup,
 		},
 		AllowPublicSubnet: jsii.Bool(true),
 	})
