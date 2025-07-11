@@ -83,9 +83,12 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 			"DB_PORT":       props.DatabaseInformation.DbPort,
 			"DB_SECRET_ARN": props.DatabaseInformation.DbSecret.SecretArn(),
 			"DB_NAME":       jsii.String("ClubEventDb"),
+			// just for dev
+			"DB_USER":     props.DatabaseInformation.DbUser,
+			"DB_PASSWORD": props.DatabaseInformation.DbPassword,
 		},
-		// Vpc:               props.Vpc,
-		// SecurityGroups:    &[]awsec2.ISecurityGroup{props.DbSecurityGroup},
+		Vpc:               props.Vpc,
+		SecurityGroups:    &[]awsec2.ISecurityGroup{props.DbSecurityGroup},
 		AllowPublicSubnet: jsii.Bool(true),
 	})
 

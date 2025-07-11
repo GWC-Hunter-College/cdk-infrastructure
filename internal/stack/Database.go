@@ -26,6 +26,10 @@ type DatabaseAttributes struct {
 	DbEndpoint *string
 	DbPort     *string
 	DbSecret   awssecretsmanager.ISecret
+
+	// passing these for unsafe opening
+	DbUser     *string
+	DbPassword *string
 }
 
 func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStackProps) *DatabaseStack {
@@ -91,6 +95,14 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 			DbEndpoint: dbInstance.DbInstanceEndpointAddress(),
 			DbPort:     dbInstance.DbInstanceEndpointPort(),
 			DbSecret:   dbInstance.Secret(),
+
+			// for dev only
+			DbUser: dbInstance.Secret().
+				SecretValueFromJson(jsii.String("username")).
+				UnsafeUnwrap(),
+			DbPassword: dbInstance.Secret().
+				SecretValueFromJson(jsii.String("password")).
+				UnsafeUnwrap(),
 		},
 	}
 }
