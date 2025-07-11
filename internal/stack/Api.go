@@ -13,13 +13,20 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
+// type ApiStackProps struct {
+// 	awscdk.StackProps
+// 	ImagesBucket awss3.IBucket
+
+//		Vpc                 awsec2.IVpc
+//		DbSecurityGroup     awsec2.SecurityGroup
+//		DatabaseInformation DatabaseAttributes
+//	}
 type ApiStackProps struct {
 	awscdk.StackProps
 	ImagesBucket awss3.IBucket
 
-	Vpc                 awsec2.IVpc
-	DbSecurityGroup     awsec2.SecurityGroup
-	DatabaseInformation DatabaseAttributes
+	NetworkStackData  NetworkStack
+	DatabaseStackData DatabaseStack
 }
 
 func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) awscdk.Stack {
@@ -74,25 +81,45 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		),
 	})
 
+	lambdaSg := createSecurityGroup(stack, props.NetworkStackData.Vpc, "lambda-to-rds")
+	// lambdaSg.AddEgressRule(
+	// 	awsec2.Peer_AnyIpv4(),
+	// 	awsec2.Port_Tcp(jsii.Number(3306)),
+	// 	jsii.String("Allow connections to the database (RDS)."),
+	// 	jsii.Bool(false))
+	lambdaSg.AddEgressRule(
+		props.DatabaseStackData.DbSecurityGroup,
+		awsec2.Port_Tcp(jsii.Number(3306)),
+		jsii.String("Allow connections to the database (RDS)."),
+		jsii.Bool(false),
+	)
+	// props.DatabaseStackData.DbSecurityGroup.
+	// 	AddIngressRule(
+	// 		lambdaSg,
+	// 		awsec2.Port_Tcp(jsii.Number(5432)),
+	// 		jsii.String("Lambda → Postgres"),
+	// 		jsii.Bool(false),
+	// 	)
+
 	dbTestFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("DBTestFunction"), &awscdklambdagoalpha.GoFunctionProps{
 		Entry:      jsii.String("lambda/db-test/main.go"), // path to folder with main.go
 		MemorySize: jsii.Number(256),
 		Timeout:    awscdk.Duration_Seconds(jsii.Number(10)),
 		Environment: &map[string]*string{
-			"DB_HOST":       props.DatabaseInformation.DbEndpoint,
-			"DB_PORT":       props.DatabaseInformation.DbPort,
-			"DB_SECRET_ARN": props.DatabaseInformation.DbSecret.SecretArn(),
+			"DB_HOST":       props.DatabaseStackData.DbInstance.DbInstanceEndpointAddress(),
+			"DB_PORT":       props.DatabaseStackData.DbInstance.DbInstanceEndpointPort(),
+			"DB_SECRET_ARN": props.DatabaseStackData.DbInstance.Secret().SecretArn(),
 			"DB_NAME":       jsii.String("ClubEventDb"),
-			// just for dev
-			"DB_USER":     props.DatabaseInformation.DbUser,
-			"DB_PASSWORD": props.DatabaseInformation.DbPassword,
 		},
-		Vpc:               props.Vpc,
-		SecurityGroups:    &[]awsec2.ISecurityGroup{props.DbSecurityGroup},
+		Vpc: props.NetworkStackData.Vpc,
+		SecurityGroups: &[]awsec2.ISecurityGroup{
+			props.NetworkStackData.LambdaSecretsManagerSg,
+			lambdaSg,
+		},
 		AllowPublicSubnet: jsii.Bool(true),
 	})
-
-	props.DatabaseInformation.DbSecret.GrantRead(dbTestFunction, &[]*string{jsii.String("AWSCURRENT")})
+	props.DatabaseStackData.DbInstance.Secret().
+		GrantRead(dbTestFunction, nil)
 
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path:    jsii.String("/db-test"),

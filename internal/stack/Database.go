@@ -12,14 +12,22 @@ import (
 
 type DatabaseStackProps struct {
 	awscdk.StackProps
+
+	NetworkStackData NetworkStack
 }
 
+// type DatabaseStack struct {
+// 	Stack awscdk.Stack
+
+//		Vpc                 awsec2.IVpc
+//		DbSecurityGroup     awsec2.SecurityGroup
+//		DatabaseInformation DatabaseAttributes
+//	}
 type DatabaseStack struct {
 	Stack awscdk.Stack
 
-	Vpc                 awsec2.IVpc
-	DbSecurityGroup     awsec2.SecurityGroup
-	DatabaseInformation DatabaseAttributes
+	DbInstance      awsrds.DatabaseInstance
+	DbSecurityGroup awsec2.SecurityGroup
 }
 
 type DatabaseAttributes struct {
@@ -38,17 +46,20 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 		sprops = props.StackProps
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
+	stack.AddDependency(props.NetworkStackData.Stack, jsii.String("Required Network stack"))
 
 	// The code that defines your stack goes here
-	vpc := awsec2.Vpc_FromLookup(stack, jsii.String("DefaultVPC"), &awsec2.VpcLookupOptions{
-		IsDefault: jsii.Bool(true),
-	})
+	vpc := props.NetworkStackData.Vpc
 
 	dbSecurityGroup := awsec2.NewSecurityGroup(stack, jsii.String("DBSecurityGroup"), &awsec2.SecurityGroupProps{
 		Vpc:              vpc,
 		AllowAllOutbound: jsii.Bool(true),
 	})
 
+	// will need to be limited to later, but right now this can be
+	// called from internet
+	// will become private so it can only be called from inside the vpc
+	// specifically lambda functions and an ec2 bastion
 	dbSecurityGroup.AddIngressRule(
 		awsec2.Peer_AnyIpv4(),
 		awsec2.Port_Tcp(jsii.Number(3306)),
@@ -88,22 +99,10 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 	_ = dbInstance
 
 	return &DatabaseStack{
-		Stack:           stack,
-		Vpc:             vpc,
-		DbSecurityGroup: dbSecurityGroup,
-		DatabaseInformation: DatabaseAttributes{
-			DbEndpoint: dbInstance.DbInstanceEndpointAddress(),
-			DbPort:     dbInstance.DbInstanceEndpointPort(),
-			DbSecret:   dbInstance.Secret(),
+		Stack: stack,
 
-			// for dev only
-			DbUser: dbInstance.Secret().
-				SecretValueFromJson(jsii.String("username")).
-				UnsafeUnwrap(),
-			DbPassword: dbInstance.Secret().
-				SecretValueFromJson(jsii.String("password")).
-				UnsafeUnwrap(),
-		},
+		DbInstance:      dbInstance,
+		DbSecurityGroup: dbSecurityGroup,
 	}
 }
 
