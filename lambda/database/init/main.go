@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
-	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/aws/aws-lambda-go/events"
 )
@@ -104,7 +103,6 @@ func main() {
 	initTableMigrationFiles := []string{
 		"07_11_2025_create_core_tables_up.sql",
 		"07_11_2025_create_member_form_migration_table_up.sql",
-		"07_11_2025_create_core_tables_down.sql",
 	}
 
 	initDatabaseMigrationFile := "07_11_2025_create_databases_up.sql"
