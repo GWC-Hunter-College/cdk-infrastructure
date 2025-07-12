@@ -40,17 +40,21 @@ func main() {
 		},
 	})
 
+	database := stack.NewDatabaseStack(app, "DatabaseStack", &stack.DatabaseStackProps{
+		awscdk.StackProps{
+			Env: env(),
+		},
+	})
+
 	stack.NewApiStack(app, "ApiStack", &stack.ApiStackProps{
 		StackProps: awscdk.StackProps{
 			Env: env(),
 		},
 		ImagesBucket: images.Bucket,
-	})
 
-	stack.NewDatabaseStack(app, "DatabaseStack", &stack.DatabaseStackProps{
-		awscdk.StackProps{
-			Env: env(),
-		},
+		Vpc:                 database.Vpc,
+		DbSecurityGroup:     database.DbSecurityGroup,
+		DatabaseInformation: database.DatabaseInformation,
 	})
 
 	// tutorial.NewTutorial(app, "CdkInfrastructureStack", &tutorial.TutorialStackProps{
