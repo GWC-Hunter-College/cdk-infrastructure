@@ -13,13 +13,20 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
+// type ApiStackProps struct {
+// 	awscdk.StackProps
+// 	ImagesBucket awss3.IBucket
+
+//		Vpc                 awsec2.IVpc
+//		DbSecurityGroup     awsec2.SecurityGroup
+//		DatabaseInformation DatabaseAttributes
+//	}
 type ApiStackProps struct {
 	awscdk.StackProps
 	ImagesBucket awss3.IBucket
 
-	Vpc                 awsec2.IVpc
-	DbSecurityGroup     awsec2.SecurityGroup
-	DatabaseInformation DatabaseAttributes
+	NetworkStackData  NetworkStack
+	DatabaseStackData DatabaseStack
 }
 
 func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) awscdk.Stack {
@@ -30,12 +37,17 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
 	// The code that defines your stack goes here
-
+	//  =======================================
+	// Api Creation
+	//  =======================================
 	// create HTTP API
 	httpApi := awsapigatewayv2.NewHttpApi(stack, jsii.String("ClubEventApi"), &awsapigatewayv2.HttpApiProps{
 		ApiName: jsii.String("ClubEventApi"),
 	})
 
+	//  =======================================
+	//  Test ping and s3 image storage test
+	//  =======================================
 	// create ping lambda function
 	getHandler := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("PingLambda"), &awscdklambdagoalpha.GoFunctionProps{
 		Entry: jsii.String("./lambda/ping/main.go"),
@@ -74,22 +86,29 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		),
 	})
 
+	//  =======================================
+	//  Lamnds to rds
+	//  =======================================
+
 	dbTestFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("DBTestFunction"), &awscdklambdagoalpha.GoFunctionProps{
 		Entry:      jsii.String("lambda/db-test/main.go"), // path to folder with main.go
 		MemorySize: jsii.Number(256),
 		Timeout:    awscdk.Duration_Seconds(jsii.Number(10)),
 		Environment: &map[string]*string{
-			"DB_HOST":       props.DatabaseInformation.DbEndpoint,
-			"DB_PORT":       props.DatabaseInformation.DbPort,
-			"DB_SECRET_ARN": props.DatabaseInformation.DbSecret.SecretArn(),
+			"DB_HOST":       props.DatabaseStackData.DbInstance.DbInstanceEndpointAddress(),
+			"DB_PORT":       props.DatabaseStackData.DbInstance.DbInstanceEndpointPort(),
+			"DB_SECRET_ARN": props.DatabaseStackData.DbInstance.Secret().SecretArn(),
 			"DB_NAME":       jsii.String("ClubEventDb"),
 		},
-		// Vpc:               props.Vpc,
-		// SecurityGroups:    &[]awsec2.ISecurityGroup{props.DbSecurityGroup},
+		Vpc: props.NetworkStackData.Vpc,
+		SecurityGroups: &[]awsec2.ISecurityGroup{
+			props.NetworkStackData.LambdaSecretsManagerSg,
+			props.NetworkStackData.LambdaSecurityGroup,
+		},
 		AllowPublicSubnet: jsii.Bool(true),
 	})
-
-	props.DatabaseInformation.DbSecret.GrantRead(dbTestFunction, &[]*string{jsii.String("AWSCURRENT")})
+	props.DatabaseStackData.DbInstance.Secret().
+		GrantRead(dbTestFunction, nil)
 
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path:    jsii.String("/db-test"),

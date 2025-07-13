@@ -15,8 +15,10 @@ import (
 
 	"github.com/aws/aws-lambda-go/events" // API Gateway V2 types
 	"github.com/aws/aws-lambda-go/lambda" // Lambda bootstrap
-	"github.com/aws/aws-sdk-go-v2/config" // loads AWS creds/region
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+
+	// loads AWS creds/region
 	_ "github.com/go-sql-driver/mysql" // MySQL driver; blank import means “register”
 )
 
@@ -38,7 +40,7 @@ var (
 )
 
 // =============================================
-// 2. loadSecret: fetches & caches username/password from Secrets Manager
+// loadSecret: fetches & caches username/password from Secrets Manager
 // =============================================
 func loadSecret(ctx context.Context, arn string) error {
 	once.Do(func() { // executes only the first time
@@ -76,7 +78,9 @@ func loadSecret(ctx context.Context, arn string) error {
 }
 
 // =============================================
-// 3. Response helper (serialises to JSON)
+//
+//	Response helper (serialises to JSON)
+//
 // =============================================
 type resp struct {
 	Success bool   `json:"success"`
@@ -85,7 +89,7 @@ type resp struct {
 }
 
 // =============================================
-// 4. Lambda handler – runs every invocation
+// Lambda handler – runs every invocation
 // =============================================
 func handler(ctx context.Context, evt events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 
@@ -94,6 +98,8 @@ func handler(ctx context.Context, evt events.APIGatewayV2HTTPRequest) (events.AP
 	port := os.Getenv("DB_PORT")
 	name := os.Getenv("DB_NAME")
 	arn := os.Getenv("DB_SECRET_ARN") // secret reference
+	// dbUser := os.Getenv("DB_USER")
+	// dbPass := os.Getenv("DB_PASSWORD")
 
 	// 4-B. Fetch (once) the sensitive bits
 	if err := loadSecret(ctx, arn); err != nil {
@@ -135,7 +141,7 @@ func fail(e error) (events.APIGatewayV2HTTPResponse, error) {
 }
 
 // =============================================
-// 6. Bootstrap
+// Bootstrap
 // =============================================
 func main() {
 	lambda.Start(handler)
