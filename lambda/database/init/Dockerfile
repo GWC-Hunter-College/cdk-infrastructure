@@ -13,10 +13,6 @@ FROM alpine:3.21
 COPY --from=build /init/main /main
 
 # Copy migration files
-COPY /migrations/07_11_2025_create_databases_up.sql /migrations/07_11_2025_create_databases_up.sql
-COPY /migrations/07_11_2025_create_core_tables_up.sql /migrations/07_11_2025_create_core_tables_up.sql
-COPY /migrations/07_11_2025_create_core_tables_down.sql /migrations/07_11_2025_create_core_tables_down.sql
-COPY /migrations/07_11_2025_create_member_form_migration_table_up.sql /migrations/07_11_2025_create_member_form_migration_table_up.sql
-COPY /migrations/07_11_2025_create_member_form_migration_table_down.sql /migrations/07_11_2025_create_member_form_migration_table_down.sql
+COPY migrations/ /migrations/
 
 ENTRYPOINT [ "/main" ]
