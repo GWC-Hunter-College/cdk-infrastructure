@@ -1,0 +1,10 @@
+services:
+  lambda:
+    build: .
+    container_name: gwc-database-init-teste
+    ports:
+      - "9000:8080"
+    volumes:
+      - ~/.aws-lambda-rie:/aws-lambda
+    entrypoint: /aws-lambda/aws-lambda-rie
+    command: /main
