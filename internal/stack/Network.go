@@ -14,11 +14,14 @@ type NetworkStackProps struct {
 }
 
 type NetworkStack struct {
-	Stack                  awscdk.Stack
-	Vpc                    awsec2.Vpc
+	Stack awscdk.Stack
+	Vpc   awsec2.Vpc
+
 	LambdaSecretsManagerSg awsec2.SecurityGroup
 	DatabaseSecurityGroup  awsec2.SecurityGroup
 	LambdaSecurityGroup    awsec2.SecurityGroup
+
+	BastionSecurityGroup awsec2.SecurityGroup
 }
 
 func NewNetworkStack(scope constructs.Construct, id string, props *NetworkStackProps) *NetworkStack {
@@ -74,7 +77,9 @@ func NewNetworkStack(scope constructs.Construct, id string, props *NetworkStackP
 		SecurityGroups:    &[]awsec2.ISecurityGroup{secretsManagerVpcEndpointSg},
 	})
 
+	// ===========================
 	// labda to rds security groups
+	// ===========================
 	dbSecurityGroup := createSecurityGroup(stack, vpc, "RdsDb")
 	lambdaSecurityGroup := createSecurityGroup(stack, vpc, "LambdaToRds")
 
@@ -91,6 +96,40 @@ func NewNetworkStack(scope constructs.Construct, id string, props *NetworkStackP
 		jsii.Bool(false),
 	)
 
+	// ===========================
+	// Security group for bastion
+	// ===========================
+
+	bastionSecurityGroup := createSecurityGroup(stack, vpc, "Ec2Bastion")
+
+	// give perms to bastion
+	dbSecurityGroup.AddIngressRule(
+		bastionSecurityGroup,
+		awsec2.Port_Tcp(jsii.Number(3306)),
+		jsii.String("Allow incoming connection from Bastion to RDS"),
+		jsii.Bool(false),
+	)
+	bastionSecurityGroup.AddEgressRule(
+		dbSecurityGroup,
+		awsec2.Port_Tcp(jsii.Number(3306)),
+		jsii.String("Allow outbound connection from Bastion to RDS"),
+		jsii.Bool(false),
+	)
+
+	// give endpoint perms to bastion
+	secretsManagerVpcEndpointSg.AddIngressRule(
+		bastionSecurityGroup,
+		awsec2.Port_Tcp(jsii.Number(443)),
+		jsii.String("Allow data from bastion ssm"),
+		jsii.Bool(false),
+	)
+	bastionSecurityGroup.AddEgressRule(
+		secretsManagerVpcEndpointSg,
+		awsec2.Port_Tcp(jsii.Number(443)),
+		jsii.String("Allow outbound data to ssm endpoint"),
+		jsii.Bool(false),
+	)
+
 	return &NetworkStack{
 		Stack: stack,
 		Vpc:   vpc,
@@ -98,6 +137,8 @@ func NewNetworkStack(scope constructs.Construct, id string, props *NetworkStackP
 		LambdaSecretsManagerSg: lambdaSecretsManagerSg,
 		DatabaseSecurityGroup:  dbSecurityGroup,
 		LambdaSecurityGroup:    lambdaSecurityGroup,
+
+		BastionSecurityGroup: bastionSecurityGroup,
 	}
 }
 

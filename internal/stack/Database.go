@@ -4,7 +4,8 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2" // core
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsrds"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awssecretsmanager"
+
+	// "github.com/aws/aws-cdk-go/awscdk/v2/awssecretsmanager"
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
@@ -28,16 +29,6 @@ type DatabaseStack struct {
 
 	DbInstance      awsrds.DatabaseInstance
 	DbSecurityGroup awsec2.SecurityGroup
-}
-
-type DatabaseAttributes struct {
-	DbEndpoint *string
-	DbPort     *string
-	DbSecret   awssecretsmanager.ISecret
-
-	// passing these for unsafe opening
-	DbUser     *string
-	DbPassword *string
 }
 
 func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStackProps) *DatabaseStack {

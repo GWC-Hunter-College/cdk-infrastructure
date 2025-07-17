@@ -46,6 +46,13 @@ func main() {
 		},
 	})
 
+	stack.NewBastionStack(app, "BastionStack", &stack.BastionStackProps{
+		StackProps: awscdk.StackProps{
+			Env: env(),
+		},
+		NetworkStackData: *network,
+	})
+
 	database := stack.NewDatabaseStack(app, "DatabaseStack", &stack.DatabaseStackProps{
 		StackProps: awscdk.StackProps{
 			Env: env(),
