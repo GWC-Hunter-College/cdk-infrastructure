@@ -95,10 +95,7 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		MemorySize: jsii.Number(256),
 		Timeout:    awscdk.Duration_Seconds(jsii.Number(10)),
 		Environment: &map[string]*string{
-			"DB_HOST":       props.DatabaseStackData.DbInstance.DbInstanceEndpointAddress(),
-			"DB_PORT":       props.DatabaseStackData.DbInstance.DbInstanceEndpointPort(),
 			"DB_SECRET_ARN": props.DatabaseStackData.DbInstance.Secret().SecretArn(),
-			"DB_NAME":       jsii.String("ClubEventDb"),
 		},
 		Vpc: props.NetworkStackData.Vpc,
 		SecurityGroups: &[]awsec2.ISecurityGroup{
