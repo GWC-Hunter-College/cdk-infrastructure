@@ -1,7 +1,12 @@
+# This docker-compose file is used to run the Lambda function locally for testing purposes.
 services:
   lambda:
     build: .
-    container_name: gwc-database-init-teste
+    container_name: gwc-database-init-test
+    environment:
+      - MYSQL_HOST=localhost
+      - MYSQL_USER=dbadmin
+      - MYSQL_PASSWORD=mysqladmin
     ports:
       - "9000:8080"
     volumes:
