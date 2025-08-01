@@ -4,9 +4,7 @@ services:
     build: .
     container_name: gwc-database-init-test
     environment:
-      - MYSQL_HOST=localhost
-      - MYSQL_USER=dbadmin
-      - MYSQL_PASSWORD=mysqladmin
+      - DB_SECRET_ARN=not exposing my arn lol
     ports:
       - "9000:8080"
     volumes:
