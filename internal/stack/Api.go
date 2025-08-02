@@ -3,11 +3,12 @@ package stack
 import (
 	"github.com/aws/aws-cdk-go/awscdk/v2" // core
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
+	"github.com/aws/aws-cdk-go/awscdklambdagoalpha/v2"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2integrations"
-	"github.com/aws/aws-cdk-go/awscdklambdagoalpha/v2"
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
@@ -87,35 +88,35 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	})
 
 	//  =======================================
-	//  Lamnds to rds
-	//  =======================================
+	//  Lambda for RDS database initialization
+	//  =======================================)
 
-	dbTestFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("DBTestFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		Entry:      jsii.String("lambda/db-test/main.go"), // path to folder with main.go
-		MemorySize: jsii.Number(256),
-		Timeout:    awscdk.Duration_Seconds(jsii.Number(10)),
-		Environment: &map[string]*string{
-			"DB_HOST":       props.DatabaseStackData.DbInstance.DbInstanceEndpointAddress(),
-			"DB_PORT":       props.DatabaseStackData.DbInstance.DbInstanceEndpointPort(),
-			"DB_SECRET_ARN": props.DatabaseStackData.DbInstance.Secret().SecretArn(),
-			"DB_NAME":       jsii.String("ClubEventDb"),
+	initRDSFunction := awslambda.NewDockerImageFunction(stack, jsii.String("Database Initialization Function"),
+		&awslambda.DockerImageFunctionProps{
+			Code:         awslambda.DockerImageCode_FromImageAsset(jsii.String("lambda/database/init"), nil),
+			MemorySize:   jsii.Number(256),
+			Architecture: awslambda.Architecture_X86_64(),
+			Environment: &map[string]*string{
+				"DB_SECRET_ARN": props.DatabaseStackData.DbInstance.Secret().SecretArn(),
+			},
+			Vpc: props.NetworkStackData.Vpc,
+			SecurityGroups: &[]awsec2.ISecurityGroup{
+				props.NetworkStackData.LambdaSecretsManagerSg,
+				props.NetworkStackData.LambdaSecurityGroup,
+			},
+			AllowPublicSubnet: jsii.Bool(true),
 		},
-		Vpc: props.NetworkStackData.Vpc,
-		SecurityGroups: &[]awsec2.ISecurityGroup{
-			props.NetworkStackData.LambdaSecretsManagerSg,
-			props.NetworkStackData.LambdaSecurityGroup,
-		},
-		AllowPublicSubnet: jsii.Bool(true),
-	})
+	)
+
 	props.DatabaseStackData.DbInstance.Secret().
-		GrantRead(dbTestFunction, nil)
+		GrantRead(initRDSFunction, nil)
 
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
-		Path:    jsii.String("/db-test"),
+		Path:    jsii.String("/database/init"),
 		Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
 		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
-			jsii.String("DBTestIntegration"),
-			dbTestFunction,
+			jsii.String("DBInitFuncIntegration"),
+			initRDSFunction,
 			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 		),
 	})

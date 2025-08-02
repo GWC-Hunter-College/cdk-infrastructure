@@ -9,10 +9,9 @@ COPY main.go .
 RUN go build -o main main.go
 
 # Copy artifacts to a clean image
-FROM alpine:3.21
-COPY --from=build /init/main /main
+FROM public.ecr.aws/lambda/provided:al2023
 
-# Copy migration files
-COPY migrations/ /migrations/
+COPY --from=build /init/main ./main
+COPY migrations/ ./migrations
 
-ENTRYPOINT [ "/main" ]
+ENTRYPOINT [ "./main" ]

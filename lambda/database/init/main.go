@@ -67,7 +67,7 @@ func initDatabase(ctx context.Context) error {
 		return os.ErrInvalid
 	}
 
-	user, password, dbname, host, err := loadSecret(ctx, secretArn)
+	user, password, dbname, host, err := loadSecrets(ctx, secretArn)
 	if err != nil {
 		log.Fatalf("Failed to load secrets: %v", err)
 		return err
@@ -111,7 +111,7 @@ func initDatabase(ctx context.Context) error {
 
 var once sync.Once
 
-func loadSecret(ctx context.Context, arn string) (username string, password string, dbname string, host string, err error) {
+func loadSecrets(ctx context.Context, arn string) (username string, password string, dbname string, host string, err error) {
 	var creds struct {
 		User string `json:"username"`
 		Pass string `json:"password"`
@@ -176,7 +176,7 @@ func connectToMySQL(user string, password string, dbName string, address string)
 //
 // It assumes that your migration files are under a folder "migrations" in the current working directory.
 func runMigration(db *sql.DB, filename string) error {
-	fileBytes, err := os.ReadFile("/migrations/" + filename)
+	fileBytes, err := os.ReadFile("migrations/" + filename)
 	if err != nil {
 		log.Printf("Failed to read migration file %s: %v", filename, err)
 		return err

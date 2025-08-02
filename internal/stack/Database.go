@@ -53,16 +53,16 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 	dbSecurityGroup := props.NetworkStackData.DatabaseSecurityGroup
 
 	dbInstance := awsrds.NewDatabaseInstance(stack, jsii.String("ClubEventDb"), &awsrds.DatabaseInstanceProps{
-		DatabaseName: jsii.String("ClubEventDb"),
+		// DatabaseName: jsii.String("ClubEventDb"),
 		Engine: awsrds.DatabaseInstanceEngine_Mysql(&awsrds.MySqlInstanceEngineProps{
 			Version: awsrds.MysqlEngineVersion_VER_8_0_36(),
 		}),
 		InstanceType: awsec2.InstanceType_Of(awsec2.InstanceClass_T3, awsec2.InstanceSize_MICRO),
 		Vpc:          vpc,
 		VpcSubnets: &awsec2.SubnetSelection{
-			SubnetType: awsec2.SubnetType_PRIVATE_ISOLATED,
+			SubnetType: awsec2.SubnetType_PUBLIC,
 		},
-		PubliclyAccessible:  jsii.Bool(false), // pprivate
+		PubliclyAccessible:  jsii.Bool(true),
 		SecurityGroups:      &[]awsec2.ISecurityGroup{dbSecurityGroup},
 		Credentials:         awsrds.Credentials_FromGeneratedSecret(jsii.String("dbadmin"), nil),
 		AllocatedStorage:    jsii.Number(20),
