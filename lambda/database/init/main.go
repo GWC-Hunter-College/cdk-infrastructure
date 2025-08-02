@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -18,17 +19,10 @@ import (
 )
 
 /*
-	aws lambda update-function-code \
-	--function-name gwc-database-init \
-	--image-uri 010526280138.dkr.ecr.us-east-1.amazonaws.com/gwc-database-init-test:latest \
-	--publish
-*/
-
-/*
 	To test locally, use the following commands (on MacOS with an M-series chip, change `linux/arm64`
 		to `linux/amd64` for x86-based chips):
 
-	1. docker docker-compose build
+	1. docker-compose build
 
 	2. docker-compose start
 
@@ -50,7 +44,7 @@ func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.A
 		log.Printf("Error initializing database: %v", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
-			Body:       "Failed to initialize database: " + err.Error(),
+			Body:       fmt.Sprintf("Failed to initialize database: %v", err),
 		}, err
 	}
 
