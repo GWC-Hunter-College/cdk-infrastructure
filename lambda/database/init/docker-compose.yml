@@ -1,0 +1,13 @@
+# This docker-compose file is used to run the Lambda function locally for testing purposes.
+services:
+  lambda:
+    build: .
+    container_name: gwc-database-init-test
+    environment:
+      - DB_SECRET_ARN=arn:aws:secretsmanager:us-east-1:010526280138:secret:DatabaseStackClubEventDbSec-dRdhJUTfjzov-1lnSec
+    ports:
+      - "9000:8080"
+    volumes:
+      - ~/.aws-lambda-rie:/aws-lambda
+    entrypoint: /aws-lambda/aws-lambda-rie
+    command: /main

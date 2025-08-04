@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2integrations"
+
 	"github.com/aws/aws-cdk-go/awscdklambdagoalpha/v2"
 
 	"github.com/aws/constructs-go/constructs/v10"
@@ -13,30 +14,33 @@ import (
 )
 
 type ApiStackProps struct {
-	awscdk.StackProps
+	Props        awscdk.StackProps
 	ImagesBucket awss3.IBucket
 }
 
 func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) awscdk.Stack {
 	var sprops awscdk.StackProps
 	if props != nil {
-		sprops = props.StackProps
+		sprops = props.Props
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
 	// The code that defines your stack goes here
-
+	//  =======================================
+	// Api Creation
+	//  =======================================
 	// create HTTP API
 	httpApi := awsapigatewayv2.NewHttpApi(stack, jsii.String("ClubEventApi"), &awsapigatewayv2.HttpApiProps{
 		ApiName: jsii.String("ClubEventApi"),
 	})
 
+	//  =======================================
+	//  Test ping and s3 image storage test
+	//  =======================================
 	// create ping lambda function
-	getHandler := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("PingLambda"), &awscdklambdagoalpha.GoFunctionProps{
-		Entry: jsii.String("./lambda/ping/main.go"),
-		Bundling: &awscdklambdagoalpha.BundlingOptions{
-			GoBuildFlags: jsii.Strings(`-ldflags "-s -w"`),
-		},
+	pingFunc := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Ping Function"), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("PingTest"),
+		Entry:        jsii.String("./lambda/ping/main.go"),
 	})
 
 	// add route to HTTP API
@@ -45,17 +49,15 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
 		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
 			jsii.String("PingLambdaIntegration"),
-			getHandler,
+			pingFunc,
 			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 		),
 	})
 
 	// create presign lambda function
-	presign := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("presign"), &awscdklambdagoalpha.GoFunctionProps{
-		Entry: jsii.String("./lambda/presign/main.go"),
-		Bundling: &awscdklambdagoalpha.BundlingOptions{
-			GoBuildFlags: jsii.Strings(`-ldflags "-s -w"`),
-		},
+	presignFunc := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Presign Function"), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("S3Presign"),
+		Entry:        jsii.String("./lambda/presign/main.go"),
 	})
 
 	// add route to HTTP API
@@ -64,7 +66,7 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
 		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
 			jsii.String("PresignOptionsIntegration"),
-			presign,
+			presignFunc,
 			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 		),
 	})
@@ -74,8 +76,6 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		Value:       httpApi.ApiEndpoint(),
 		Description: jsii.String("HTTP API Endpoint"),
 	})
-
-	// httpApi.AddRoutes()
 
 	return stack
 }

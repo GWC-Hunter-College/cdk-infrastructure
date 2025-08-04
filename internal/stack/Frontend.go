@@ -12,13 +12,13 @@ import (
 )
 
 type FrontendStackProps struct {
-	awscdk.StackProps
+	Props awscdk.StackProps
 }
 
 func NewFrontendStack(scope constructs.Construct, id string, props *FrontendStackProps) awscdk.Stack {
 	var sprops awscdk.StackProps
 	if props != nil {
-		sprops = props.StackProps
+		sprops = props.Props
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
