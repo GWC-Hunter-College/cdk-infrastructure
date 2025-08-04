@@ -10,7 +10,7 @@ import (
 const CIDR = "10.1.0.0/16"
 
 type NetworkStackProps struct {
-	awscdk.StackProps
+	Props awscdk.StackProps
 }
 
 type NetworkStack struct {
@@ -24,7 +24,7 @@ type NetworkStack struct {
 func NewNetworkStack(scope constructs.Construct, id string, props *NetworkStackProps) *NetworkStack {
 	var sprops awscdk.StackProps
 	if props != nil {
-		sprops = props.StackProps
+		sprops = props.Props
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 

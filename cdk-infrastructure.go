@@ -10,64 +10,42 @@ import (
 	stack "cdk-infrastructure/internal/stack"
 )
 
-// type FrontendStackProps struct {
-// 	awscdk.StackProps
-// }
-
-// type TutorialStackProps struct {
-// 	awscdk.StackProps
-// }
-
-// type ApiStackProps struct {
-// 	awscdk.StackProps
-// 	ImagesBucket awss3.IBucket
-// }
-
 func main() {
 	defer jsii.Close()
 
 	app := awscdk.NewApp(nil)
 
 	stack.NewFrontendStack(app, "FrontendStack", &stack.FrontendStackProps{
-		awscdk.StackProps{
+		Props: awscdk.StackProps{
 			Env: env(),
 		},
 	})
 
 	images := stack.NewStorageStack(app, "StorageStack", &stack.StorageStackProps{
-		awscdk.StackProps{
+		Props: awscdk.StackProps{
 			Env: env(),
 		},
 	})
 
 	network := stack.NewNetworkStack(app, "NetworkStack", &stack.NetworkStackProps{
-		awscdk.StackProps{
+		Props: awscdk.StackProps{
 			Env: env(),
 		},
 	})
 
-	database := stack.NewDatabaseStack(app, "DatabaseStack", &stack.DatabaseStackProps{
-		StackProps: awscdk.StackProps{
+	stack.NewDatabaseStack(app, "DatabaseStack", &stack.DatabaseStackProps{
+		Props: awscdk.StackProps{
 			Env: env(),
 		},
 		NetworkStackData: *network,
 	})
 
 	stack.NewApiStack(app, "ApiStack", &stack.ApiStackProps{
-		StackProps: awscdk.StackProps{
+		Props: awscdk.StackProps{
 			Env: env(),
 		},
 		ImagesBucket: images.Bucket,
-
-		NetworkStackData:  *network,
-		DatabaseStackData: *database,
 	})
-
-	// tutorial.NewTutorial(app, "CdkInfrastructureStack", &tutorial.TutorialStackProps{
-	// 	awscdk.StackProps{
-	// 		Env: env(),
-	// 	},
-	// })
 
 	app.Synth(nil)
 }

@@ -8,7 +8,7 @@ import (
 )
 
 type StorageStackProps struct {
-	awscdk.StackProps
+	Props awscdk.StackProps
 }
 
 type StorageStack struct {
@@ -19,7 +19,7 @@ type StorageStack struct {
 func NewStorageStack(scope constructs.Construct, id string, props *StorageStackProps) *StorageStack {
 	var sprops awscdk.StackProps
 	if props != nil {
-		sprops = props.StackProps
+		sprops = props.Props
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
