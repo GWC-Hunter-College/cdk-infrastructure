@@ -13,7 +13,8 @@ import (
 func RunMigration(db *sql.DB, filename string) error {
 	fileBytes, err := os.ReadFile("migrations/" + filename)
 	if err != nil {
-		log.Fatalf("Failed to read migration file %s: %v", filename, err)
+		log.Printf("Failed to read migration file %s: %v", filename, err)
+		return err
 	}
 
 	statements := strings.Split(string(fileBytes), ";")
@@ -26,7 +27,8 @@ func RunMigration(db *sql.DB, filename string) error {
 
 		_, err := db.Exec(statement)
 		if err != nil {
-			log.Fatalf("Failed to execute statement in %s: %v", filename, err)
+			log.Printf("Failed to execute statement in %s: %v", filename, err)
+			return err
 		}
 
 		log.Printf("Executed statement: %s", statement)

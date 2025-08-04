@@ -38,6 +38,15 @@ var initTableMigrationFiles = []string{
 
 var initDatabaseMigrationFile = "07_11_2025_create_databases_up.sql"
 
+var (
+	once          sync.Once
+	user          string
+	password      string
+	host          string
+	databaseName  string
+	secretLoadErr error
+)
+
 func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	err := initDatabase(ctx)
 	if err != nil {
@@ -45,7 +54,7 @@ func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.A
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
 			Body:       fmt.Sprintf("Failed to initialize database: %v", err),
-		}, err
+		}, nil
 	}
 
 	return events.APIGatewayProxyResponse{
@@ -57,65 +66,49 @@ func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.A
 func initDatabase(ctx context.Context) error {
 	secretArn, success := os.LookupEnv("DB_SECRET_ARN")
 	if !success {
-		log.Fatalf("DB_SECRET_ARN environment variable not set")
+		log.Printf("DB_SECRET_ARN environment variable not set")
 		return os.ErrInvalid
 	}
 
-	user, password, dbname, host, err := loadSecrets(ctx, secretArn)
-	if err != nil {
-		log.Fatalf("Failed to load secrets: %v", err)
-		return err
+	loadSecrets(ctx, secretArn)
+	if secretLoadErr != nil {
+		log.Printf("Failed to load secrets: %v", secretLoadErr)
+		return secretLoadErr
 	}
+
+	databaseName = ""
 
 	// Run migrations to create staging and production databases
-	createDatabasesDb, err := connectToMySQL(user, password, dbname, host)
+	mysqlConn, err := connectToMySQL(user, password, databaseName, host)
 	if err != nil {
-		log.Fatalf("Failed to connect to MySQL to init databases: %v", err)
+		log.Printf("Failed to connect to MySQL to init databases: %v", err)
 		return err
 	}
-	defer createDatabasesDb.Close()
+	defer mysqlConn.Close()
 
-	if err = runMigration(createDatabasesDb, initDatabaseMigrationFile); err != nil {
-		log.Fatalf("Failed to initialize databases: %v", err)
+	if err = runMigration(mysqlConn, initDatabaseMigrationFile); err != nil {
+		log.Printf("Failed to initialize databases: %v", err)
 		return err
 	}
 
-	// Run migrations to create all tables in staging and prod
-	for _, dbName := range databaseNames {
-		log.Printf("Initializing database: %s", dbName)
-		initTablesDb, err := connectToMySQL(user, password, dbName, host)
+	// Run migrations to create all tables in staging
+	for _, file := range initTableMigrationFiles {
+		err := runMigration(mysqlConn, file)
 		if err != nil {
-			log.Fatalf("Failed to connect to MySQL to init tables: %v", err)
+			log.Printf("Failed to run migration %s: %v", file, err)
 			return err
 		}
-		defer initTablesDb.Close()
-
-		for _, file := range initTableMigrationFiles {
-			err := runMigration(initTablesDb, file)
-			if err != nil {
-				log.Fatalf("Failed to run migration %s: %v", file, err)
-				return err
-			}
-			log.Printf("Migration %s completed successfully", file)
-		}
+		log.Printf("Migration %s completed successfully", file)
 	}
 
 	return nil
 }
 
-var once sync.Once
-
-func loadSecrets(ctx context.Context, arn string) (username string, password string, dbname string, host string, err error) {
-	var creds struct {
-		User string `json:"username"`
-		Pass string `json:"password"`
-		Host string `json:"host"`
-		// DBName string `json:"dbname"`
-	}
-
+func loadSecrets(ctx context.Context, arn string) {
 	once.Do(func() {
 		cfg, err := config.LoadDefaultConfig(ctx)
 		if err != nil {
+			secretLoadErr = err
 			return
 		}
 
@@ -126,15 +119,22 @@ func loadSecrets(ctx context.Context, arn string) (username string, password str
 		})
 
 		if err != nil {
+			secretLoadErr = err
 			return
 		}
 
-		if err := json.Unmarshal([]byte(*out.SecretString), &creds); err != nil {
+		var creds struct {
+			User string `json:"username"`
+			Pass string `json:"password"`
+			Host string `json:"host"`
+		}
+
+		if err = json.Unmarshal([]byte(*out.SecretString), &creds); err != nil {
+			secretLoadErr = err
 			return
 		}
 
-		username, password, host = creds.User, creds.Pass, creds.Host
-		dbname = ""
+		user, password, host = creds.User, creds.Pass, creds.Host
 	})
 
 	return

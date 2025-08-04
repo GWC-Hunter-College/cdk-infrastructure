@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS `STUDENT_INFO` (
 
 CREATE TABLE IF NOT EXISTS `INTERESTS` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
-  `label` VARCHAR(255) COMMENT 'career, community,, and volunteer when starting'
+  `label` VARCHAR(255) COMMENT 'career, community, and volunteer when starting'
 );
 
 CREATE TABLE IF NOT EXISTS `STUDENTS_TO_INTERESTS` (

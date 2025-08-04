@@ -4,7 +4,7 @@ services:
     build: .
     container_name: gwc-database-init-test
     environment:
-      - DB_SECRET_ARN=not exposing my arn lol
+      - DB_SECRET_ARN=arn:aws:secretsmanager:us-east-1:010526280138:secret:DatabaseStackClubEventDbSec-dRdhJUTfjzov-1lnSec
     ports:
       - "9000:8080"
     volumes:
