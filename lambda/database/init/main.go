@@ -29,7 +29,7 @@ import (
 	3. curl "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{}'
 */
 
-var databaseNames = []string{"STAGING", "PROD"}
+var databaseNames = []string{"STAGING"}
 
 var initTableMigrationFiles = []string{
 	"07_11_2025_create_core_tables_up.sql",
@@ -76,29 +76,44 @@ func initDatabase(ctx context.Context) error {
 		return secretLoadErr
 	}
 
+	// Leaving this blank to initialize staging and prod
 	databaseName = ""
 
 	// Run migrations to create staging and production databases
-	mysqlConn, err := connectToMySQL(user, password, databaseName, host)
+	initDBConn, err := connectToMySQL(user, password, databaseName, host)
 	if err != nil {
 		log.Printf("Failed to connect to MySQL to init databases: %v", err)
 		return err
 	}
-	defer mysqlConn.Close()
+	defer initDBConn.Close()
 
-	if err = runMigration(mysqlConn, initDatabaseMigrationFile); err != nil {
+	if err = runMigration(initDBConn, initDatabaseMigrationFile); err != nil {
 		log.Printf("Failed to initialize databases: %v", err)
 		return err
 	}
 
 	// Run migrations to create all tables in staging
-	for _, file := range initTableMigrationFiles {
-		err := runMigration(mysqlConn, file)
+	for _, dbName := range databaseNames {
+		log.Printf("Attempting to connect to database: %s", dbName)
+
+		mysqlConn, err := connectToMySQL(user, password, dbName, host)
 		if err != nil {
-			log.Printf("Failed to run migration %s: %v", file, err)
-			return err
+			log.Printf("Failed to connect to database %s", dbName)
+			return fmt.Errorf("failed to connect to database %s", dbName)
 		}
-		log.Printf("Migration %s completed successfully", file)
+		defer mysqlConn.Close()
+
+		log.Printf("Connected to database %s successfully", dbName)
+		log.Printf("Running migrations for database %s", dbName)
+
+		for _, file := range initTableMigrationFiles {
+			err := runMigration(mysqlConn, file)
+			if err != nil {
+				log.Printf("Failed to run migration %s: %v", file, err)
+				return err
+			}
+			log.Printf("Migration %s completed successfully", file)
+		}
 	}
 
 	return nil
