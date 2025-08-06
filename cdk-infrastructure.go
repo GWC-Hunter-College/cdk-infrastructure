@@ -63,11 +63,11 @@ func main() {
 		DatabaseStackData: *database,
 	})
 
-	// tutorial.NewTutorial(app, "CdkInfrastructureStack", &tutorial.TutorialStackProps{
-	// 	awscdk.StackProps{
-	// 		Env: env(),
-	// 	},
-	// })
+	stack.NewBastionStack(app, "BastionStack", &stack.BastionStackProps{
+		awscdk.StackProps{
+			Env: env(),
+		},
+	})
 
 	app.Synth(nil)
 }
