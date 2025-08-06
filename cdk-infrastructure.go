@@ -33,7 +33,7 @@ func main() {
 		},
 	})
 
-	stack.NewDatabaseStack(app, "DatabaseStack", &stack.DatabaseStackProps{
+	database := stack.NewDatabaseStack(app, "DatabaseStack", &stack.DatabaseStackProps{
 		Props: awscdk.StackProps{
 			Env: env(),
 		},
@@ -45,6 +45,16 @@ func main() {
 			Env: env(),
 		},
 		ImagesBucket: images.Bucket,
+
+		// NetworkStackData:  *network,
+		DatabaseStackData: *database,
+	})
+
+	stack.NewBastionStack(app, "BastionStack", &stack.BastionStackProps{
+		StackProps: awscdk.StackProps{
+			Env: env(),
+		},
+		DatabaseStackData: *database,
 	})
 
 	app.Synth(nil)

@@ -2,6 +2,7 @@ package stack
 
 import (
 	"github.com/aws/aws-cdk-go/awscdk/v2" // core
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2"
@@ -16,6 +17,8 @@ import (
 type ApiStackProps struct {
 	Props        awscdk.StackProps
 	ImagesBucket awss3.IBucket
+
+	DatabaseStackData DatabaseStack
 }
 
 func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) awscdk.Stack {
@@ -67,6 +70,39 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
 			jsii.String("PresignOptionsIntegration"),
 			presignFunc,
+			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
+		),
+	})
+
+	//  =======================================
+	//  Lamnds to rds
+	//  =======================================
+	networkStackData := props.DatabaseStackData.NetworkStackData
+
+	dbTestFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("DBTestFunction"), &awscdklambdagoalpha.GoFunctionProps{
+		Entry:      jsii.String("lambda/db-test/main.go"), // path to folder with main.go
+		MemorySize: jsii.Number(256),
+		Timeout:    awscdk.Duration_Seconds(jsii.Number(10)),
+		Environment: &map[string]*string{
+			"DB_SECRET_ARN": props.DatabaseStackData.DbInstance.Secret().SecretArn(),
+			"DB_HOST":       props.DatabaseStackData.ProxyEndpoint,
+		},
+		Vpc: networkStackData.Vpc,
+		SecurityGroups: &[]awsec2.ISecurityGroup{
+			networkStackData.LambdaSecretsManagerSg,
+			props.DatabaseStackData.LambdaSecurityGroup,
+		},
+		AllowPublicSubnet: jsii.Bool(true),
+	})
+	props.DatabaseStackData.DbInstance.Secret().
+		GrantRead(dbTestFunction, nil)
+
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path:    jsii.String("/db-test"),
+		Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
+		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
+			jsii.String("DBTestIntegration"),
+			dbTestFunction,
 			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 		),
 	})

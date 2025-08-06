@@ -17,8 +17,8 @@ type NetworkStack struct {
 	Stack                  awscdk.Stack
 	Vpc                    awsec2.Vpc
 	LambdaSecretsManagerSg awsec2.SecurityGroup
-	DatabaseSecurityGroup  awsec2.SecurityGroup
-	LambdaSecurityGroup    awsec2.SecurityGroup
+	// DatabaseSecurityGroup  awsec2.SecurityGroup
+	// LambdaSecurityGroup    awsec2.SecurityGroup
 }
 
 func NewNetworkStack(scope constructs.Construct, id string, props *NetworkStackProps) *NetworkStack {
@@ -74,30 +74,13 @@ func NewNetworkStack(scope constructs.Construct, id string, props *NetworkStackP
 		SecurityGroups:    &[]awsec2.ISecurityGroup{secretsManagerVpcEndpointSg},
 	})
 
-	// labda to rds security groups
-	dbSecurityGroup := createSecurityGroup(stack, vpc, "RdsDb")
-	lambdaSecurityGroup := createSecurityGroup(stack, vpc, "LambdaToRds")
-
-	lambdaSecurityGroup.AddEgressRule(
-		dbSecurityGroup,
-		awsec2.Port_Tcp(jsii.Number(3306)),
-		jsii.String("Allow connections to the database (RDS)."),
-		jsii.Bool(false),
-	)
-	dbSecurityGroup.AddIngressRule(
-		lambdaSecurityGroup,
-		awsec2.Port_Tcp(jsii.Number(3306)),
-		jsii.String("Allow connections from lambda"),
-		jsii.Bool(false),
-	)
-
 	return &NetworkStack{
 		Stack: stack,
 		Vpc:   vpc,
 
 		LambdaSecretsManagerSg: lambdaSecretsManagerSg,
-		DatabaseSecurityGroup:  dbSecurityGroup,
-		LambdaSecurityGroup:    lambdaSecurityGroup,
+		// DatabaseSecurityGroup:  dbSecurityGroup,
+		// LambdaSecurityGroup:    lambdaSecurityGroup,
 	}
 }
 
