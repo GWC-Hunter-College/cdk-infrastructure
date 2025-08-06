@@ -54,6 +54,26 @@ func NewBastionStack(scope constructs.Construct, id string, props *BastionStackP
 		awsec2.Port_Tcp(jsii.Number(443)),
 		jsii.String("Allow HTTPS from Bastion SG"),
 		jsii.Bool(false))
+
+	// sg work to rds
+	bastionSecurityGroup.AddEgressRule(
+		props.DatabaseStackData.DbSecurityGroup,
+		awsec2.Port_Tcp(jsii.Number(3306)),
+		jsii.String("Bastion to RDS/Proxy"),
+		jsii.Bool(false), // remoteRule: we’ll add it ourselves below
+	)
+
+	//    Use low-level construct so the rule OBJECT lives here.
+	awsec2.NewCfnSecurityGroupIngress(stack, jsii.String("RdsIngressFromBastion3306"),
+		&awsec2.CfnSecurityGroupIngressProps{
+			GroupId:               props.DatabaseStackData.DbSecurityGroup.SecurityGroupId(),
+			SourceSecurityGroupId: bastionSecurityGroup.SecurityGroupId(),
+			IpProtocol:            jsii.String("tcp"),
+			FromPort:              jsii.Number(3306),
+			ToPort:                jsii.Number(3306),
+			Description:           jsii.String("Allow bastion to reach MySQL"),
+		})
+
 	// ===========================
 	// create vpc endpoints for ssm
 	// ===========================
