@@ -13,19 +13,11 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
-// type ApiStackProps struct {
-// 	awscdk.StackProps
-// 	ImagesBucket awss3.IBucket
-
-//		Vpc                 awsec2.IVpc
-//		DbSecurityGroup     awsec2.SecurityGroup
-//		DatabaseInformation DatabaseAttributes
-//	}
 type ApiStackProps struct {
 	awscdk.StackProps
 	ImagesBucket awss3.IBucket
 
-	NetworkStackData  NetworkStack
+	// NetworkStackData  NetworkStack
 	DatabaseStackData DatabaseStack
 }
 
@@ -89,6 +81,7 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	//  =======================================
 	//  Lamnds to rds
 	//  =======================================
+	networkStackData := props.DatabaseStackData.NetworkStackData
 
 	dbTestFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("DBTestFunction"), &awscdklambdagoalpha.GoFunctionProps{
 		Entry:      jsii.String("lambda/db-test/main.go"), // path to folder with main.go
@@ -96,11 +89,12 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		Timeout:    awscdk.Duration_Seconds(jsii.Number(10)),
 		Environment: &map[string]*string{
 			"DB_SECRET_ARN": props.DatabaseStackData.DbInstance.Secret().SecretArn(),
+			"DB_HOST":       props.DatabaseStackData.ProxyEndpoint,
 		},
-		Vpc: props.NetworkStackData.Vpc,
+		Vpc: networkStackData.Vpc,
 		SecurityGroups: &[]awsec2.ISecurityGroup{
-			props.NetworkStackData.LambdaSecretsManagerSg,
-			props.NetworkStackData.LambdaSecurityGroup,
+			networkStackData.LambdaSecretsManagerSg,
+			props.DatabaseStackData.LambdaSecurityGroup,
 		},
 		AllowPublicSubnet: jsii.Bool(true),
 	})

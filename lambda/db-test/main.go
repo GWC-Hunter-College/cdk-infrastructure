@@ -20,8 +20,6 @@ import (
 
 	// loads AWS creds/region
 	_ "github.com/go-sql-driver/mysql" // MySQL driver; blank import means “register”
-
-	"strconv"
 )
 
 //=============================================
@@ -39,8 +37,7 @@ var (
 	dbUser string
 	dbPass string
 
-	dbHost string
-	dbPort string
+	dbPort int
 	dbName string
 
 	secErr error // remember the first error so later calls return it
@@ -59,7 +56,7 @@ func loadSecret(ctx context.Context, arn string) error {
 		}
 		sm := secretsmanager.NewFromConfig(cfg)
 
-		// 2-B. Get secret value by ARN
+		// Get secret value by ARN
 		out, err := sm.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
 			SecretId: &arn,
 		})
@@ -73,7 +70,7 @@ func loadSecret(ctx context.Context, arn string) error {
 			User string `json:"username"`
 			Pass string `json:"password"`
 
-			Host string `json:"host"`
+			// Host string `json:"host"`
 			Port int    `json:"port"`
 			Name string `json:"dbname"`
 		}
@@ -82,9 +79,9 @@ func loadSecret(ctx context.Context, arn string) error {
 			return
 		}
 
-		// 2-D. Cache for the life of the container
-		dbUser, dbPass, dbHost, dbPort, dbName =
-			tmp.User, tmp.Pass, tmp.Host, strconv.Itoa(tmp.Port), tmp.Name
+		// Cache for the life of the container
+		dbUser, dbPass, dbPort, dbName =
+			tmp.User, tmp.Pass, tmp.Port, tmp.Name
 	})
 	return secErr // nil on success, first error otherwise
 }
@@ -108,13 +105,17 @@ func handler(ctx context.Context, evt events.APIGatewayV2HTTPRequest) (events.AP
 	// arn of secret
 	arn := os.Getenv("DB_SECRET_ARN") // secret reference
 
+	host := os.Getenv("DB_HOST") // secret reference
+
 	// fet credentionals from secret
 	if err := loadSecret(ctx, arn); err != nil {
 		return fail(err) // early return on error
 	}
 
+	// tls stuff needed
+
 	// Build MySQL DSN and connect
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, dbHost, dbPort, dbName)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?tls=true", dbUser, dbPass, host, dbPort, dbName)
 	db, err := sql.Open("mysql", dsn) // creates connection pool
 	if err != nil {
 		return fail(err)

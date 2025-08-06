@@ -59,7 +59,7 @@ func main() {
 		},
 		ImagesBucket: images.Bucket,
 
-		NetworkStackData:  *network,
+		// NetworkStackData:  *network,
 		DatabaseStackData: *database,
 	})
 

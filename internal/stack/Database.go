@@ -26,18 +26,14 @@ type DatabaseStackProps struct {
 type DatabaseStack struct {
 	Stack awscdk.Stack
 
-	DbInstance      awsrds.DatabaseInstance
-	DbSecurityGroup awsec2.SecurityGroup
-}
+	DbInstance       awsrds.DatabaseInstance
+	DbSecurityGroup  awsec2.SecurityGroup
+	NetworkStackData NetworkStack
 
-type DatabaseAttributes struct {
-	DbEndpoint *string
-	DbPort     *string
-	DbSecret   awssecretsmanager.ISecret
+	LambdaSecurityGroup awsec2.SecurityGroup
+	ProxySecurityGroup  awsec2.SecurityGroup
 
-	// passing these for unsafe opening
-	DbUser     *string
-	DbPassword *string
+	ProxyEndpoint *string
 }
 
 func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStackProps) *DatabaseStack {
@@ -48,9 +44,45 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 	stack := awscdk.NewStack(scope, &id, &sprops)
 	stack.AddDependency(props.NetworkStackData.Stack, jsii.String("Required Network stack"))
 
-	// The code that defines your stack goes here
+	// ====================================
+	// infrasctructure security groups and rules
+	// ====================================
 	vpc := props.NetworkStackData.Vpc
-	dbSecurityGroup := props.NetworkStackData.DatabaseSecurityGroup
+
+	// labda to rds security groups
+	proxySecurityGroup := createSecurityGroup(stack, vpc, "Proxy")
+	lambdaSecurityGroup := createSecurityGroup(stack, vpc, "Lambda")
+	dbSecurityGroup := createSecurityGroup(stack, vpc, "RdsDb")
+
+	lambdaSecurityGroup.AddEgressRule(
+		proxySecurityGroup,
+		awsec2.Port_Tcp(jsii.Number(3306)),
+		jsii.String("Allow connections to the proxy"),
+		jsii.Bool(false),
+	)
+	proxySecurityGroup.AddIngressRule(
+		lambdaSecurityGroup,
+		awsec2.Port_Tcp(jsii.Number(3306)),
+		jsii.String("Allow connections from lambda"),
+		jsii.Bool(false),
+	)
+
+	proxySecurityGroup.AddEgressRule(
+		dbSecurityGroup,
+		awsec2.Port_Tcp(jsii.Number(3306)),
+		jsii.String("Allow connections to the database (RDS)."),
+		jsii.Bool(false),
+	)
+	dbSecurityGroup.AddIngressRule(
+		proxySecurityGroup,
+		awsec2.Port_Tcp(jsii.Number(3306)),
+		jsii.String("Allow connections from the proxy"),
+		jsii.Bool(false),
+	)
+
+	// ====================================
+	// db instance and proxy inilitialization
+	// ====================================
 
 	dbInstance := awsrds.NewDatabaseInstance(stack, jsii.String("ClubEventDb"), &awsrds.DatabaseInstanceProps{
 		DatabaseName: jsii.String("ClubEventDb"),
@@ -83,10 +115,26 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 
 	_ = dbInstance
 
+	proxy := awsrds.NewDatabaseProxy(stack, jsii.String("ClubEventProxy"), &awsrds.DatabaseProxyProps{
+		ProxyTarget:       awsrds.ProxyTarget_FromInstance(dbInstance),
+		Secrets:           &[]awssecretsmanager.ISecret{dbInstance.Secret()},
+		Vpc:               vpc,
+		RequireTLS:        jsii.Bool(true),
+		SecurityGroups:    &[]awsec2.ISecurityGroup{proxySecurityGroup},
+		IdleClientTimeout: awscdk.Duration_Minutes(jsii.Number(30)),
+	})
+
 	return &DatabaseStack{
 		Stack: stack,
 
 		DbInstance:      dbInstance,
 		DbSecurityGroup: dbSecurityGroup,
+
+		LambdaSecurityGroup: lambdaSecurityGroup,
+		ProxySecurityGroup:  proxySecurityGroup,
+
+		NetworkStackData: props.NetworkStackData,
+
+		ProxyEndpoint: proxy.Endpoint(),
 	}
 }
