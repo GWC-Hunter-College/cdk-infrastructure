@@ -13,7 +13,7 @@ import (
 type BastionStackProps struct {
 	awscdk.StackProps
 
-	// NetworkStackData NetworkStack
+	DatabaseStackData DatabaseStack
 }
 
 func NewBastionStack(scope constructs.Construct, id string, props *BastionStackProps) awscdk.Stack {
@@ -22,24 +22,23 @@ func NewBastionStack(scope constructs.Construct, id string, props *BastionStackP
 		sprops = props.StackProps
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
-	// stack.AddDependency(props.NetworkStackData.Stack, jsii.String("Required Network stack"))
 
 	// // The code that defines your stack goes here
-	// vpc := props.NetworkStackData.Vpc
+	vpc := props.DatabaseStackData.NetworkStackData.Vpc
 	// // dbSecurityGroup := props.NetworkStackData.DatabaseSecurityGroup
 	// endpointSecurityGroup := props.NetworkStackData.LambdaSecretsManagerSg
 	// bastionSecurityGroup := props.NetworkStackData.BastionSecurityGroup
 
-	vpc := awsec2.NewVpc(stack, jsii.String("BastionVpc"), &awsec2.VpcProps{
-		MaxAzs: jsii.Number(2),
-		SubnetConfiguration: &[]*awsec2.SubnetConfiguration{
-			{
-				Name:       jsii.String("Private"),
-				SubnetType: awsec2.SubnetType_PRIVATE_ISOLATED,
-				CidrMask:   jsii.Number(24),
-			},
-		},
-	})
+	// vpc := awsec2.NewVpc(stack, jsii.String("BastionVpc"), &awsec2.VpcProps{
+	// 	MaxAzs: jsii.Number(2),
+	// 	SubnetConfiguration: &[]*awsec2.SubnetConfiguration{
+	// 		{
+	// 			Name:       jsii.String("Private"),
+	// 			SubnetType: awsec2.SubnetType_PRIVATE_ISOLATED,
+	// 			CidrMask:   jsii.Number(24),
+	// 		},
+	// 	},
+	// })
 
 	endpointSecurityGroup := createSecurityGroup(stack, vpc, "endpointSecurityGroup")
 	bastionSecurityGroup := createSecurityGroup(stack, vpc, "bastionSecurityGroup")
@@ -59,18 +58,21 @@ func NewBastionStack(scope constructs.Construct, id string, props *BastionStackP
 	// create vpc endpoints for ssm
 	// ===========================
 	addEndpoint(
+		stack,
 		vpc,
 		endpointSecurityGroup,
 		*jsii.String("ssm"),
 		awsec2.InterfaceVpcEndpointAwsService_SSM(),
 	)
 	addEndpoint(
+		stack,
 		vpc,
 		endpointSecurityGroup,
 		*jsii.String("ssm-messages"),
 		awsec2.InterfaceVpcEndpointAwsService_SSM_MESSAGES(),
 	)
 	addEndpoint(
+		stack,
 		vpc,
 		endpointSecurityGroup,
 		*jsii.String("ec2-messages"),
@@ -119,12 +121,17 @@ func NewBastionStack(scope constructs.Construct, id string, props *BastionStackP
 	return stack
 }
 
-func addEndpoint(vpc awsec2.Vpc, securityGroup awsec2.SecurityGroup, id string, svc awsec2.IInterfaceVpcEndpointService) {
-	vpc.AddInterfaceEndpoint(jsii.String(id), &awsec2.InterfaceVpcEndpointOptions{
+func addEndpoint(scope constructs.Construct,
+	vpc awsec2.Vpc,
+	sg awsec2.SecurityGroup,
+	id string,
+	svc awsec2.IInterfaceVpcEndpointService) {
+
+	awsec2.NewInterfaceVpcEndpoint(scope, jsii.String(id), &awsec2.InterfaceVpcEndpointProps{
+		Vpc:               vpc,
 		Service:           svc,
 		PrivateDnsEnabled: jsii.Bool(true),
-		Open:              jsii.Bool(false),
-		SecurityGroups:    &[]awsec2.ISecurityGroup{securityGroup},
+		SecurityGroups:    &[]awsec2.ISecurityGroup{sg},
 		Subnets: &awsec2.SubnetSelection{
 			SubnetType: awsec2.SubnetType_PRIVATE_ISOLATED,
 		},

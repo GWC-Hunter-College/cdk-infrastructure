@@ -64,9 +64,10 @@ func main() {
 	})
 
 	stack.NewBastionStack(app, "BastionStack", &stack.BastionStackProps{
-		awscdk.StackProps{
+		StackProps: awscdk.StackProps{
 			Env: env(),
 		},
+		DatabaseStackData: *database,
 	})
 
 	app.Synth(nil)
