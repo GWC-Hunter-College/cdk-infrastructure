@@ -99,6 +99,19 @@ func NewBastionStack(scope constructs.Construct, id string, props *BastionStackP
 		awsec2.InterfaceVpcEndpointAwsService_EC2_MESSAGES(),
 	)
 
+	// s3 gateway endpoint for mysql
+	awsec2.NewGatewayVpcEndpoint(stack, jsii.String("S3Endpoint"), &awsec2.GatewayVpcEndpointProps{
+		Vpc:     vpc,
+		Service: awsec2.GatewayVpcEndpointAwsService_S3(),
+	})
+
+	bastionSecurityGroup.AddEgressRule(
+		awsec2.Peer_Ipv4(jsii.String("0.0.0.0/0")),
+		awsec2.Port_Tcp(jsii.Number(443)),
+		jsii.String("Allow HTTPS egress"),
+		jsii.Bool(false),
+	)
+
 	// ===========================
 	// create vpc endpoints for ssm
 	// ===========================
