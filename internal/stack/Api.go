@@ -3,6 +3,7 @@ package stack
 import (
 	"github.com/aws/aws-cdk-go/awscdk/v2" // core
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsrds"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2"
@@ -18,7 +19,12 @@ type ApiStackProps struct {
 	Props        awscdk.StackProps
 	ImagesBucket awss3.IBucket
 
-	DatabaseStackData DatabaseStack
+	// DatabaseStackData DatabaseStack
+	Vpc                               awsec2.Vpc
+	LambdaSecretsManagerSecurityGroup awsec2.SecurityGroup
+	DbInstance                        awsrds.DatabaseInstance
+	ProxyEndpoint                     *string
+	LambdaSecurityGroup               awsec2.SecurityGroup
 }
 
 func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) awscdk.Stack {
@@ -77,24 +83,30 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	//  =======================================
 	//  Lamnds to rds
 	//  =======================================
-	networkStackData := props.DatabaseStackData.NetworkStackData
+	// networkStackData := props.DatabaseStackData.NetworkStackData
+	vpc := props.Vpc
+	lambdaSecretsManagerSecurityGroup := props.LambdaSecretsManagerSecurityGroup
+
+	dbInstance := props.DbInstance
+	proxyEndpoint := props.ProxyEndpoint
+	lambdaSecurityGroup := props.LambdaSecurityGroup
 
 	dbTestFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("DBTestFunction"), &awscdklambdagoalpha.GoFunctionProps{
 		Entry:      jsii.String("lambda/db-test/main.go"), // path to folder with main.go
 		MemorySize: jsii.Number(256),
 		Timeout:    awscdk.Duration_Seconds(jsii.Number(10)),
 		Environment: &map[string]*string{
-			"DB_SECRET_ARN": props.DatabaseStackData.DbInstance.Secret().SecretArn(),
-			"DB_HOST":       props.DatabaseStackData.ProxyEndpoint,
+			"DB_SECRET_ARN": dbInstance.Secret().SecretArn(),
+			"DB_HOST":       proxyEndpoint,
 		},
-		Vpc: networkStackData.Vpc,
+		Vpc: vpc,
 		SecurityGroups: &[]awsec2.ISecurityGroup{
-			networkStackData.LambdaSecretsManagerSg,
-			props.DatabaseStackData.LambdaSecurityGroup,
+			lambdaSecretsManagerSecurityGroup,
+			lambdaSecurityGroup,
 		},
 		AllowPublicSubnet: jsii.Bool(true),
 	})
-	props.DatabaseStackData.DbInstance.Secret().
+	dbInstance.Secret().
 		GrantRead(dbTestFunction, nil)
 
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{

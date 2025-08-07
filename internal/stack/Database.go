@@ -15,20 +15,18 @@ import (
 type DatabaseStackProps struct {
 	Props awscdk.StackProps
 
-	NetworkStackData NetworkStack
+	Vpc                               awsec2.Vpc
+	LambdaSecretsManagerSecurityGroup awsec2.SecurityGroup
 }
-
-// type DatabaseStack struct {
-// 	Stack awscdk.Stack
-// }
 
 type DatabaseStack struct {
 	Stack awscdk.Stack
 
-	DbInstance       awsrds.DatabaseInstance
-	DbSecurityGroup  awsec2.SecurityGroup
-	NetworkStackData NetworkStack
+	Vpc                               awsec2.Vpc
+	LambdaSecretsManagerSecurityGroup awsec2.SecurityGroup
 
+	DbInstance          awsrds.DatabaseInstance
+	DbSecurityGroup     awsec2.SecurityGroup
 	LambdaSecurityGroup awsec2.SecurityGroup
 	ProxySecurityGroup  awsec2.SecurityGroup
 
@@ -41,17 +39,16 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 		sprops = props.Props
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
-	stack.AddDependency(props.NetworkStackData.Stack, jsii.String("Required Network stack"))
 
 	// ====================================
 	// infrasctructure security groups and rules
 	// ====================================
-	vpc := props.NetworkStackData.Vpc
+	vpc := props.Vpc
 
 	// labda to rds security groups
-	proxySecurityGroup := createSecurityGroup(stack, vpc, "Proxy")
-	lambdaSecurityGroup := createSecurityGroup(stack, vpc, "Lambda")
-	dbSecurityGroup := createSecurityGroup(stack, vpc, "RdsDb")
+	proxySecurityGroup := createSecurityGroup(stack, vpc, "proxy")
+	lambdaSecurityGroup := createSecurityGroup(stack, vpc, "lambda")
+	dbSecurityGroup := createSecurityGroup(stack, vpc, "rds-db")
 
 	lambdaSecurityGroup.AddEgressRule(
 		proxySecurityGroup,
@@ -112,6 +109,8 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 		IdleClientTimeout: awscdk.Duration_Minutes(jsii.Number(30)),
 	})
 
+	lambdaSecretsManagerSecurityGroup := props.LambdaSecretsManagerSecurityGroup
+
 	initRDSFunc := awslambda.NewDockerImageFunction(stack, jsii.String("RDS Init Function"),
 		&awslambda.DockerImageFunctionProps{
 			FunctionName: jsii.String("InitRDS"),
@@ -124,9 +123,9 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 				"DB_SECRET_ARN": dbInstance.Secret().SecretArn(),
 				"DB_HOST":       proxy.Endpoint(),
 			},
-			Vpc: props.NetworkStackData.Vpc,
+			Vpc: vpc,
 			SecurityGroups: &[]awsec2.ISecurityGroup{
-				props.NetworkStackData.LambdaSecretsManagerSg,
+				lambdaSecretsManagerSecurityGroup,
 				lambdaSecurityGroup,
 			},
 			AllowPublicSubnet: jsii.Bool(true),
@@ -185,13 +184,13 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 	return &DatabaseStack{
 		Stack: stack,
 
-		DbInstance:      dbInstance,
-		DbSecurityGroup: dbSecurityGroup,
+		Vpc:                               vpc,
+		LambdaSecretsManagerSecurityGroup: lambdaSecretsManagerSecurityGroup,
 
+		DbInstance:          dbInstance,
+		DbSecurityGroup:     dbSecurityGroup,
 		LambdaSecurityGroup: lambdaSecurityGroup,
 		ProxySecurityGroup:  proxySecurityGroup,
-
-		NetworkStackData: props.NetworkStackData,
 
 		ProxyEndpoint: proxy.Endpoint(),
 	}

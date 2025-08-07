@@ -13,7 +13,9 @@ import (
 type BastionStackProps struct {
 	awscdk.StackProps
 
-	DatabaseStackData DatabaseStack
+	// DatabaseStackData DatabaseStack
+	Vpc             awsec2.Vpc
+	DbSecurityGroup awsec2.SecurityGroup
 }
 
 func NewBastionStack(scope constructs.Construct, id string, props *BastionStackProps) awscdk.Stack {
@@ -24,24 +26,11 @@ func NewBastionStack(scope constructs.Construct, id string, props *BastionStackP
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
 	// // The code that defines your stack goes here
-	vpc := props.DatabaseStackData.NetworkStackData.Vpc
-	// // dbSecurityGroup := props.NetworkStackData.DatabaseSecurityGroup
-	// endpointSecurityGroup := props.NetworkStackData.LambdaSecretsManagerSg
-	// bastionSecurityGroup := props.NetworkStackData.BastionSecurityGroup
+	vpc := props.Vpc
+	dbSecurityGroup := props.DbSecurityGroup
 
-	// vpc := awsec2.NewVpc(stack, jsii.String("BastionVpc"), &awsec2.VpcProps{
-	// 	MaxAzs: jsii.Number(2),
-	// 	SubnetConfiguration: &[]*awsec2.SubnetConfiguration{
-	// 		{
-	// 			Name:       jsii.String("Private"),
-	// 			SubnetType: awsec2.SubnetType_PRIVATE_ISOLATED,
-	// 			CidrMask:   jsii.Number(24),
-	// 		},
-	// 	},
-	// })
-
-	endpointSecurityGroup := createSecurityGroup(stack, vpc, "endpointSecurityGroup")
-	bastionSecurityGroup := createSecurityGroup(stack, vpc, "bastionSecurityGroup")
+	endpointSecurityGroup := createSecurityGroup(stack, vpc, "endpoint")
+	bastionSecurityGroup := createSecurityGroup(stack, vpc, "bastion")
 
 	bastionSecurityGroup.AddEgressRule(
 		endpointSecurityGroup,
@@ -57,16 +46,16 @@ func NewBastionStack(scope constructs.Construct, id string, props *BastionStackP
 
 	// sg work to rds
 	bastionSecurityGroup.AddEgressRule(
-		props.DatabaseStackData.DbSecurityGroup,
+		dbSecurityGroup,
 		awsec2.Port_Tcp(jsii.Number(3306)),
 		jsii.String("Bastion to RDS/Proxy"),
-		jsii.Bool(false), // remoteRule: we’ll add it ourselves below
+		jsii.Bool(false),
 	)
 
 	//    Use low-level construct so the rule OBJECT lives here.
 	awsec2.NewCfnSecurityGroupIngress(stack, jsii.String("RdsIngressFromBastion3306"),
 		&awsec2.CfnSecurityGroupIngressProps{
-			GroupId:               props.DatabaseStackData.DbSecurityGroup.SecurityGroupId(),
+			GroupId:               dbSecurityGroup.SecurityGroupId(),
 			SourceSecurityGroupId: bastionSecurityGroup.SecurityGroupId(),
 			IpProtocol:            jsii.String("tcp"),
 			FromPort:              jsii.Number(3306),
@@ -140,13 +129,6 @@ func NewBastionStack(scope constructs.Construct, id string, props *BastionStackP
 			VpcSubnets:    &awsec2.SubnetSelection{SubnetType: awsec2.SubnetType_PRIVATE_ISOLATED},
 		})
 
-	// awsec2.NewBastionHostLinux(stack, jsii.String("BastionHost"), &awsec2.BastionHostLinuxProps{
-	// 	Vpc:             vpc,
-	// 	SubnetSelection: &awsec2.SubnetSelection{SubnetType: awsec2.SubnetType_PRIVATE_ISOLATED},
-	// 	SecurityGroup:   bastionSecurityGroup,
-	// 	InstanceType:    awsec2.InstanceType_Of(awsec2.InstanceClass_T3, awsec2.InstanceSize_MICRO),
-	// 	Role:            bastionRole,
-	// })
 	awscdk.NewCfnOutput(stack, jsii.String("InstanceId"), &awscdk.CfnOutputProps{
 		Value: instance.InstanceId(),
 	})
