@@ -103,6 +103,15 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 		DeletionProtection:  jsii.Bool(false),
 	})
 
+	proxy := awsrds.NewDatabaseProxy(stack, jsii.String("ClubEventProxy"), &awsrds.DatabaseProxyProps{
+		ProxyTarget:       awsrds.ProxyTarget_FromInstance(dbInstance),
+		Secrets:           &[]awssecretsmanager.ISecret{dbInstance.Secret()},
+		Vpc:               vpc,
+		RequireTLS:        jsii.Bool(true),
+		SecurityGroups:    &[]awsec2.ISecurityGroup{proxySecurityGroup},
+		IdleClientTimeout: awscdk.Duration_Minutes(jsii.Number(30)),
+	})
+
 	initRDSFunc := awslambda.NewDockerImageFunction(stack, jsii.String("RDS Init Function"),
 		&awslambda.DockerImageFunctionProps{
 			FunctionName: jsii.String("InitRDS"),
@@ -113,6 +122,7 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 			Architecture: awslambda.Architecture_X86_64(),
 			Environment: &map[string]*string{
 				"DB_SECRET_ARN": dbInstance.Secret().SecretArn(),
+				"DB_HOST":       proxy.Endpoint(),
 			},
 			Vpc: props.NetworkStackData.Vpc,
 			SecurityGroups: &[]awsec2.ISecurityGroup{
@@ -137,15 +147,6 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 
 	// Ensure the database is ready before the Lambda runs
 	rdsInitializer.Node().AddDependency(dbInstance)
-
-	proxy := awsrds.NewDatabaseProxy(stack, jsii.String("ClubEventProxy"), &awsrds.DatabaseProxyProps{
-		ProxyTarget:       awsrds.ProxyTarget_FromInstance(dbInstance),
-		Secrets:           &[]awssecretsmanager.ISecret{dbInstance.Secret()},
-		Vpc:               vpc,
-		RequireTLS:        jsii.Bool(true),
-		SecurityGroups:    &[]awsec2.ISecurityGroup{proxySecurityGroup},
-		IdleClientTimeout: awscdk.Duration_Minutes(jsii.Number(30)),
-	})
 
 	return &DatabaseStack{
 		Stack: stack,
