@@ -85,7 +85,7 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 
 	dbInstance := awsrds.NewDatabaseInstance(stack, jsii.String("ClubEventDb"), &awsrds.DatabaseInstanceProps{
 		Engine: awsrds.DatabaseInstanceEngine_Mysql(&awsrds.MySqlInstanceEngineProps{
-			Version: awsrds.MysqlEngineVersion_VER_8_0_36(),
+			Version: awsrds.MysqlEngineVersion_VER_8_0_37(),
 		}),
 		InstanceType: awsec2.InstanceType_Of(awsec2.InstanceClass_T3, awsec2.InstanceSize_MICRO),
 		Vpc:          vpc,
@@ -117,7 +117,7 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 			FunctionName: jsii.String("InitRDS"),
 			Description:  jsii.String("Lambda function to initialize RDS database"),
 			Code:         awslambda.DockerImageCode_FromImageAsset(jsii.String("lambda/database/init"), nil),
-			Timeout:      awscdk.Duration_Minutes(jsii.Number(2)),
+			Timeout:      awscdk.Duration_Minutes(jsii.Number(1)),
 			MemorySize:   jsii.Number(256),
 			Architecture: awslambda.Architecture_X86_64(),
 			Environment: &map[string]*string{
@@ -147,6 +147,40 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 
 	// Ensure the database is ready before the Lambda runs
 	rdsInitializer.Node().AddDependency(dbInstance)
+
+	// ensure the proxy, security group and it's ingress rules are ready before lambda runs
+
+	// 1️⃣ Create an explicit ingress rule so the Lambda SG can reach the Proxy SG
+	initToProxyIngress := awsec2.NewCfnSecurityGroupIngress(stack,
+		jsii.String("InitToProxyIngress"), // logical ID
+		&awsec2.CfnSecurityGroupIngressProps{
+			GroupId:               proxySecurityGroup.SecurityGroupId(),  // destination SG
+			SourceSecurityGroupId: lambdaSecurityGroup.SecurityGroupId(), // source SG
+			IpProtocol:            jsii.String("tcp"),
+			FromPort:              jsii.Number(3306),
+			ToPort:                jsii.Number(3306),
+		},
+	)
+
+	// Grab the default target-group that CDK created for the proxy
+	// ngl ion understand what a target group is
+	var tg awsrds.CfnDBProxyTargetGroup
+
+	for _, child := range *proxy.Node().Children() { // note the *
+		if v, ok := child.(awsrds.CfnDBProxyTargetGroup); ok {
+			tg = v
+			break
+		}
+	}
+
+	if tg == nil {
+		panic("no CfnDBProxyTargetGroup found under the proxy")
+	}
+
+	// require the depencies before running lambda
+	rdsInitializer.Node().AddDependency(proxy)              // proxy ENIs/listener ready
+	rdsInitializer.Node().AddDependency(tg)                 // instance registered
+	rdsInitializer.Node().AddDependency(initToProxyIngress) // ingress rule applied
 
 	return &DatabaseStack{
 		Stack: stack,
