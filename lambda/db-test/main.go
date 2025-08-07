@@ -2,7 +2,7 @@
 package main
 
 //=============================================
-// 0. Imports
+// Imports
 //=============================================
 import (
 	"context"       // carries cancellation / deadlines across calls
@@ -23,7 +23,7 @@ import (
 )
 
 //=============================================
-// 1. Global cache (warm-start optimisation)
+// Global cache (warm-start optimisation)
 //=============================================
 
 // ❯ Why global?  A Lambda execution environment can be reused for many requests
@@ -36,6 +36,10 @@ var (
 	once   sync.Once
 	dbUser string
 	dbPass string
+
+	dbPort int
+	dbName string
+
 	secErr error // remember the first error so later calls return it
 )
 
@@ -44,7 +48,7 @@ var (
 // =============================================
 func loadSecret(ctx context.Context, arn string) error {
 	once.Do(func() { // executes only the first time
-		// 2-A. AWS SDK config (region/creds from env/IAM role)
+		// AWS SDK config (region/creds from env/IAM role)
 		cfg, err := config.LoadDefaultConfig(ctx)
 		if err != nil {
 			secErr = err
@@ -52,7 +56,7 @@ func loadSecret(ctx context.Context, arn string) error {
 		}
 		sm := secretsmanager.NewFromConfig(cfg)
 
-		// 2-B. Get secret value by ARN
+		// Get secret value by ARN
 		out, err := sm.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
 			SecretId: &arn,
 		})
@@ -61,18 +65,23 @@ func loadSecret(ctx context.Context, arn string) error {
 			return
 		}
 
-		// 2-C. Parse {"username":"…","password":"…"}
+		// Parse
 		var tmp struct {
 			User string `json:"username"`
 			Pass string `json:"password"`
+
+			// Host string `json:"host"`
+			Port int    `json:"port"`
+			Name string `json:"dbname"`
 		}
 		if err := json.Unmarshal([]byte(*out.SecretString), &tmp); err != nil {
 			secErr = err
 			return
 		}
 
-		// 2-D. Cache for the life of the container
-		dbUser, dbPass = tmp.User, tmp.Pass
+		// Cache for the life of the container
+		dbUser, dbPass, dbPort, dbName =
+			tmp.User, tmp.Pass, tmp.Port, tmp.Name
 	})
 	return secErr // nil on success, first error otherwise
 }
@@ -93,34 +102,33 @@ type resp struct {
 // =============================================
 func handler(ctx context.Context, evt events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 
-	// 4-A. Non-secret config from environment variables
-	host := os.Getenv("DB_HOST") // injected by CDK
-	port := os.Getenv("DB_PORT")
-	name := os.Getenv("DB_NAME")
+	// arn of secret
 	arn := os.Getenv("DB_SECRET_ARN") // secret reference
-	// dbUser := os.Getenv("DB_USER")
-	// dbPass := os.Getenv("DB_PASSWORD")
 
-	// 4-B. Fetch (once) the sensitive bits
+	host := os.Getenv("DB_HOST") // secret reference
+
+	// fet credentionals from secret
 	if err := loadSecret(ctx, arn); err != nil {
 		return fail(err) // early return on error
 	}
 
-	// 4-C. Build MySQL DSN and connect
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, host, port, name)
+	// tls stuff needed
+
+	// Build MySQL DSN and connect
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?tls=true", dbUser, dbPass, host, dbPort, dbName)
 	db, err := sql.Open("mysql", dsn) // creates connection pool
 	if err != nil {
 		return fail(err)
 	}
 	defer db.Close()
 
-	// 4-D. Simple test query
+	// Simple test query
 	var result int
 	if err := db.QueryRowContext(ctx, "SELECT 1 + 1 AS result").Scan(&result); err != nil {
 		return fail(err)
 	}
 
-	// 4-E. Marshal success JSON
+	// Marshal success JSON
 	ok, _ := json.Marshal(resp{Success: true, Result: result})
 	return events.APIGatewayV2HTTPResponse{
 		StatusCode: 200,
