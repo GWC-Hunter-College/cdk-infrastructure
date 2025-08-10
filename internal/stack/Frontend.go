@@ -60,6 +60,20 @@ func NewFrontendStack(scope constructs.Construct, id string, props *FrontendStac
 	frontendMain = awscloudfront.NewDistribution(stack, jsii.String("FrontendMain"), &awscloudfront.DistributionProps{
 		DefaultRootObject: jsii.String("index.html"),
 		DefaultBehavior:   cloudfrontMainBehavior,
+		ErrorResponses: &[]*awscloudfront.ErrorResponse{
+			{
+				HttpStatus:         jsii.Number(404),
+				ResponseHttpStatus: jsii.Number(200),
+				ResponsePagePath:   jsii.String("/index.html"),
+				Ttl:                awscdk.Duration_Seconds(jsii.Number(0)),
+			},
+			{
+				HttpStatus:         jsii.Number(403),
+				ResponseHttpStatus: jsii.Number(200),
+				ResponsePagePath:   jsii.String("/index.html"),
+				Ttl:                awscdk.Duration_Seconds(jsii.Number(0)),
+			},
+		},
 	})
 
 	awscdk.NewCfnOutput(stack, jsii.String("CloudFront_Main_Info"), &awscdk.CfnOutputProps{
@@ -85,6 +99,20 @@ func NewFrontendStack(scope constructs.Construct, id string, props *FrontendStac
 	frontendProduction = awscloudfront.NewDistribution(stack, jsii.String("FrontendProduction"), &awscloudfront.DistributionProps{
 		DefaultRootObject: jsii.String("index.html"),
 		DefaultBehavior:   cloudfrontProductionBehavior,
+		ErrorResponses: &[]*awscloudfront.ErrorResponse{
+			{
+				HttpStatus:         jsii.Number(404),
+				ResponseHttpStatus: jsii.Number(200),
+				ResponsePagePath:   jsii.String("/index.html"),
+				Ttl:                awscdk.Duration_Seconds(jsii.Number(0)),
+			},
+			{
+				HttpStatus:         jsii.Number(403),
+				ResponseHttpStatus: jsii.Number(200),
+				ResponsePagePath:   jsii.String("/index.html"),
+				Ttl:                awscdk.Duration_Seconds(jsii.Number(0)),
+			},
+		},
 	})
 
 	awscdk.NewCfnOutput(stack, jsii.String("CloudFront_Production_Info"), &awscdk.CfnOutputProps{
