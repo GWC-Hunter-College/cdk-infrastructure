@@ -63,6 +63,12 @@ func main() {
 		DbSecurityGroup: database.DbSecurityGroup,
 	})
 
+	stack.NewAuthorizationStack(app, "AuthorizationStack", &stack.AuthorizationStackProps{
+		Props: awscdk.StackProps{
+			Env: env(),
+		},
+	})
+
 	app.Synth(nil)
 }
 
