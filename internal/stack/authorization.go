@@ -7,6 +7,8 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awscognito"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
+
+	"os"
 )
 
 type AuthorizationStackProps struct {
@@ -66,6 +68,25 @@ func NewAuthorizationStack(scope constructs.Construct, id string, props *Authori
 
 	//
 
+	googleProvider := awscognito.NewUserPoolIdentityProviderGoogle(stack, jsii.String("GoogleIdP"), &awscognito.UserPoolIdentityProviderGoogleProps{
+		UserPool:     userPool,
+		ClientId:     jsii.String(os.Getenv("GOOGLE_CLIENT_ID")),
+		ClientSecret: jsii.String(os.Getenv("GOOGLE_CLIENT_SECRET")),
+		Scopes: &[]*string{
+			jsii.String("openid"),
+			jsii.String("email"),
+			jsii.String("profile"),
+		},
+		AttributeMapping: &awscognito.AttributeMapping{
+			Email:          awscognito.ProviderAttribute_GOOGLE_EMAIL(),
+			GivenName:      awscognito.ProviderAttribute_GOOGLE_GIVEN_NAME(),
+			FamilyName:     awscognito.ProviderAttribute_GOOGLE_FAMILY_NAME(),
+			ProfilePicture: awscognito.ProviderAttribute_GOOGLE_PICTURE(),
+		},
+	})
+
+	//
+
 	webClient := userPool.AddClient(jsii.String("WebClient"), &awscognito.UserPoolClientOptions{
 		GenerateSecret: jsii.Bool(false), // public client (browser)
 		AuthFlows: &awscognito.AuthFlow{
@@ -91,6 +112,7 @@ func NewAuthorizationStack(scope constructs.Construct, id string, props *Authori
 		SupportedIdentityProviders: &[]awscognito.UserPoolClientIdentityProvider{
 			awscognito.UserPoolClientIdentityProvider_COGNITO(),
 			// Google will be added in the next step
+			awscognito.UserPoolClientIdentityProvider_GOOGLE(),
 		},
 		// Recommended for browsers
 		// DisableOAuthScopesRequired: jsii.Bool(false),
@@ -99,6 +121,7 @@ func NewAuthorizationStack(scope constructs.Construct, id string, props *Authori
 		IdTokenValidity:       awscdk.Duration_Hours(jsii.Number(1)),
 		RefreshTokenValidity:  awscdk.Duration_Days(jsii.Number(30)),
 	})
+	webClient.Node().AddDependency(googleProvider)
 
 	awscdk.NewCfnOutput(stack, jsii.String("UserPoolClientId"), &awscdk.CfnOutputProps{
 		Value: webClient.UserPoolClientId(),
