@@ -24,6 +24,12 @@ func main() {
 		},
 	})
 
+	stack.NewFrontendHccStack(app, "FrontendHccStack", &stack.FrontendHccStackProps{
+		Props: awscdk.StackProps{
+			Env: env(),
+		},
+	})
+
 	images := stack.NewStorageStack(app, "StorageStack", &stack.StorageStackProps{
 		Props: awscdk.StackProps{
 			Env: env(),
