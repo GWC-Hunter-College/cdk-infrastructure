@@ -9,6 +9,8 @@ import (
 
 	"github.com/aws/aws-cdk-go/awscdk/v2/awscloudfront"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awscloudfrontorigins"
+
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
 )
 
 type FrontendHccStackProps struct {
@@ -122,7 +124,78 @@ func NewFrontendHccStack(scope constructs.Construct, id string, props *FrontendH
 	})
 
 	// create IAM user for the account as well as a policy to attach to the IAM
-	// to allow for the IAM to have acces to s3 and cloudfront for
+	// to allow for the IAM to have acces to s3 and cloudfront for ci/cd
+
+	// iam user is account specific so must grab account
+	account := awscdk.Stack_Of(stack).Account()
+
+	// grab the arns of the distributions to attach to policy
+	// stagingDistArn := awscdk.Arn_Format(&awscdk.ArnComponents{
+	// 	Service:      jsii.String("cloudfront"),
+	// 	Account:      account,
+	// 	Resource:     jsii.String("distribution"),
+	// 	ResourceName: frontendStaging.DistributionId(),
+	// }, stack)
+	// prodDistArn := awscdk.Arn_Format(&awscdk.ArnComponents{
+	// 	Service:      jsii.String("cloudfront"),
+	// 	Account:      account,
+	// 	Resource:     jsii.String("distribution"),
+	// 	ResourceName: frontendProduction.DistributionId(),
+	// }, stack)
+	stagingDistArn := awscdk.Arn_Format(&awscdk.ArnComponents{
+		Service:      jsii.String("cloudfront"),
+		Account:      account,
+		Resource:     jsii.String("distribution"),
+		ResourceName: frontendStaging.DistributionId(),
+		Region:       jsii.String(""),
+	}, stack)
+	prodDistArn := awscdk.Arn_Format(&awscdk.ArnComponents{
+		Service:      jsii.String("cloudfront"),
+		Account:      account,
+		Resource:     jsii.String("distribution"),
+		ResourceName: frontendProduction.DistributionId(),
+		Region:       jsii.String(""),
+	}, stack)
+
+	// create polices for s3 access and cloudfront invalidations
+
+	// S3 policy statements (scoped to this bucket)
+	s3ObjectsStmt := awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+		Effect:    awsiam.Effect_ALLOW,
+		Actions:   jsii.Strings("s3:PutObject", "s3:DeleteObject"),
+		Resources: jsii.Strings(*websiteBucket.ArnForObjects(jsii.String("*"))),
+	})
+	s3ListStmt := awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+		Effect:    awsiam.Effect_ALLOW,
+		Actions:   jsii.Strings("s3:ListBucket"),
+		Resources: jsii.Strings(*websiteBucket.BucketArn()),
+	})
+
+	// CloudFront invalidation for both dists
+	cfInvalidateStmt := awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+		Effect:    awsiam.Effect_ALLOW,
+		Actions:   jsii.Strings("cloudfront:CreateInvalidation"),
+		Resources: jsii.Strings(*stagingDistArn, *prodDistArn),
+	})
+
+	ciPolicy := awsiam.NewPolicy(stack, jsii.String("FrontendCiPolicy"), &awsiam.PolicyProps{
+		PolicyName: jsii.String("frontend-hcc-ci-policy"),
+		Statements: &[]awsiam.PolicyStatement{s3ObjectsStmt, s3ListStmt, cfInvalidateStmt},
+	})
+
+	// create user and attach policy
+	ciUser := awsiam.NewUser(stack, jsii.String("FrontendCiUser"), &awsiam.UserProps{
+		UserName: jsii.String("hcc-website-ci-deployer"),
+	})
+	ciPolicy.AttachToUser(ciUser)
+
+	//
+	awscdk.NewCfnOutput(stack, jsii.String("S3_Staging_Destination"), &awscdk.CfnOutputProps{
+		Value: jsii.String("s3://" + *websiteBucket.BucketName() + "/staging"),
+	})
+	awscdk.NewCfnOutput(stack, jsii.String("S3_Production_Destination"), &awscdk.CfnOutputProps{
+		Value: jsii.String("s3://" + *websiteBucket.BucketName() + "/production"),
+	})
 
 	return stack
 }
