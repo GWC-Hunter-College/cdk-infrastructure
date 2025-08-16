@@ -76,7 +76,7 @@ func main() {
 		log.Println(".env file not found, relying on system env vars")
 	}
 
-	stack.NewAuthorizationStack(app, "AuthorizationStack", &stack.AuthorizationStackProps{
+	stack.NewAuthenticationStack(app, "AuthenticationStack", &stack.AuthenticationStackProps{
 		Props: awscdk.StackProps{
 			Env: env(),
 		},

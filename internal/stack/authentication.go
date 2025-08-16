@@ -11,15 +11,15 @@ import (
 	"os"
 )
 
-type AuthorizationStackProps struct {
+type AuthenticationStackProps struct {
 	Props awscdk.StackProps
 }
 
-type AuthorizationStack struct {
+type AuthenticationStack struct {
 	Stack awscdk.Stack
 }
 
-func NewAuthorizationStack(scope constructs.Construct, id string, props *AuthorizationStackProps) *AuthorizationStack {
+func NewAuthenticationStack(scope constructs.Construct, id string, props *AuthenticationStackProps) *AuthenticationStack {
 	var sprops awscdk.StackProps
 	if props != nil {
 		sprops = props.Props
@@ -103,7 +103,7 @@ func NewAuthorizationStack(scope constructs.Construct, id string, props *Authori
 				awscognito.OAuthScope_PROFILE(),
 			},
 			CallbackUrls: &[]*string{
-				jsii.String("http://localhost:5173/callback"),
+				jsii.String("http://localhost:5173/"),
 			},
 			LogoutUrls: &[]*string{
 				jsii.String("http://localhost:5173/"),
@@ -146,7 +146,7 @@ func NewAuthorizationStack(scope constructs.Construct, id string, props *Authori
 		),
 	})
 
-	return &AuthorizationStack{
+	return &AuthenticationStack{
 		Stack: stack,
 	}
 }
