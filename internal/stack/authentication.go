@@ -34,7 +34,7 @@ func NewAuthenticationStack(scope constructs.Construct, id string, props *Authen
 		StandardAttributes: &awscognito.StandardAttributes{
 			Email: &awscognito.StandardAttribute{
 				Required: jsii.Bool(true),
-				Mutable:  jsii.Bool(false),
+				Mutable:  jsii.Bool(true),
 			},
 		},
 		AccountRecovery: awscognito.AccountRecovery_EMAIL_ONLY,
