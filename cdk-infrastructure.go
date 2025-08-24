@@ -33,11 +33,12 @@ func main() {
 		},
 	})
 
-	stack.NewDatabaseStack(app, "DatabaseStack", &stack.DatabaseStackProps{
+	database := stack.NewDatabaseStack(app, "DatabaseStack", &stack.DatabaseStackProps{
 		Props: awscdk.StackProps{
 			Env: env(),
 		},
-		NetworkStackData: *network,
+		Vpc:                               network.Vpc,
+		LambdaSecretsManagerSecurityGroup: network.LambdaSecretsManagerSecurityGroup,
 	})
 
 	stack.NewApiStack(app, "ApiStack", &stack.ApiStackProps{
@@ -45,6 +46,21 @@ func main() {
 			Env: env(),
 		},
 		ImagesBucket: images.Bucket,
+
+		Vpc:                               database.Vpc,
+		LambdaSecretsManagerSecurityGroup: database.LambdaSecretsManagerSecurityGroup,
+		DbInstance:                        database.DbInstance,
+		ProxyEndpoint:                     database.ProxyEndpoint,
+		LambdaSecurityGroup:               database.LambdaSecurityGroup,
+	})
+
+	stack.NewBastionStack(app, "BastionStack", &stack.BastionStackProps{
+		StackProps: awscdk.StackProps{
+			Env: env(),
+		},
+
+		Vpc:             database.Vpc,
+		DbSecurityGroup: database.DbSecurityGroup,
 	})
 
 	app.Synth(nil)

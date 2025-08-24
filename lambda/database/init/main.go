@@ -42,9 +42,9 @@ var (
 	once          sync.Once
 	user          string
 	password      string
-	host          string
 	databaseName  string
 	secretLoadErr error
+	// host          string
 )
 
 func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -65,6 +65,7 @@ func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.A
 
 func initDatabase(ctx context.Context) error {
 	secretArn, success := os.LookupEnv("DB_SECRET_ARN")
+	host, success := os.LookupEnv("DB_HOST")
 	if !success {
 		log.Printf("DB_SECRET_ARN environment variable not set")
 		return os.ErrInvalid
@@ -141,7 +142,7 @@ func loadSecrets(ctx context.Context, arn string) {
 		var creds struct {
 			User string `json:"username"`
 			Pass string `json:"password"`
-			Host string `json:"host"`
+			// Host string `json:"host"`
 		}
 
 		if err = json.Unmarshal([]byte(*out.SecretString), &creds); err != nil {
@@ -149,7 +150,8 @@ func loadSecrets(ctx context.Context, arn string) {
 			return
 		}
 
-		user, password, host = creds.User, creds.Pass, creds.Host
+		// user, password, host = creds.User, creds.Pass, creds.Host
+		user, password = creds.User, creds.Pass
 	})
 
 	return
@@ -162,6 +164,7 @@ func connectToMySQL(user string, password string, dbName string, address string)
 	dsn.DBName = dbName
 	dsn.Addr = address + ":3306"
 	dsn.Net = "tcp"
+	dsn.TLSConfig = "true"
 
 	db, err := sql.Open("mysql", dsn.FormatDSN())
 	if err != nil {

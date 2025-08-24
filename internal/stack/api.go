@@ -2,6 +2,8 @@ package stack
 
 import (
 	"github.com/aws/aws-cdk-go/awscdk/v2" // core
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsrds"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2"
@@ -16,6 +18,13 @@ import (
 type ApiStackProps struct {
 	Props        awscdk.StackProps
 	ImagesBucket awss3.IBucket
+
+	// DatabaseStackData DatabaseStack
+	Vpc                               awsec2.Vpc
+	LambdaSecretsManagerSecurityGroup awsec2.SecurityGroup
+	DbInstance                        awsrds.DatabaseInstance
+	ProxyEndpoint                     *string
+	LambdaSecurityGroup               awsec2.SecurityGroup
 }
 
 func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) awscdk.Stack {
@@ -67,6 +76,45 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
 			jsii.String("PresignOptionsIntegration"),
 			presignFunc,
+			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
+		),
+	})
+
+	//  =======================================
+	//  Lamnds to rds
+	//  =======================================
+	// networkStackData := props.DatabaseStackData.NetworkStackData
+	vpc := props.Vpc
+	lambdaSecretsManagerSecurityGroup := props.LambdaSecretsManagerSecurityGroup
+
+	dbInstance := props.DbInstance
+	proxyEndpoint := props.ProxyEndpoint
+	lambdaSecurityGroup := props.LambdaSecurityGroup
+
+	dbTestFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("DBTestFunction"), &awscdklambdagoalpha.GoFunctionProps{
+		Entry:      jsii.String("lambda/database/test/main.go"), // path to folder with main.go
+		MemorySize: jsii.Number(256),
+		Timeout:    awscdk.Duration_Seconds(jsii.Number(10)),
+		Environment: &map[string]*string{
+			"DB_SECRET_ARN": dbInstance.Secret().SecretArn(),
+			"DB_HOST":       proxyEndpoint,
+		},
+		Vpc: vpc,
+		SecurityGroups: &[]awsec2.ISecurityGroup{
+			lambdaSecretsManagerSecurityGroup,
+			lambdaSecurityGroup,
+		},
+		AllowPublicSubnet: jsii.Bool(true),
+	})
+	dbInstance.Secret().
+		GrantRead(dbTestFunction, nil)
+
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path:    jsii.String("/database/test"),
+		Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
+		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
+			jsii.String("DBTestIntegration"),
+			dbTestFunction,
 			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 		),
 	})
