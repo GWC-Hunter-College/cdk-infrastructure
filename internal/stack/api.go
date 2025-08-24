@@ -92,7 +92,7 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	lambdaSecurityGroup := props.LambdaSecurityGroup
 
 	dbTestFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("DBTestFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		Entry:      jsii.String("lambda/db-test/main.go"), // path to folder with main.go
+		Entry:      jsii.String("lambda/database/test/main.go"), // path to folder with main.go
 		MemorySize: jsii.Number(256),
 		Timeout:    awscdk.Duration_Seconds(jsii.Number(10)),
 		Environment: &map[string]*string{
@@ -110,7 +110,7 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		GrantRead(dbTestFunction, nil)
 
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
-		Path:    jsii.String("/db-test"),
+		Path:    jsii.String("/database/test"),
 		Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
 		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
 			jsii.String("DBTestIntegration"),

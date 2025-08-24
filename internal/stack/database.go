@@ -87,9 +87,9 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 		InstanceType: awsec2.InstanceType_Of(awsec2.InstanceClass_T3, awsec2.InstanceSize_MICRO),
 		Vpc:          vpc,
 		VpcSubnets: &awsec2.SubnetSelection{
-			SubnetType: awsec2.SubnetType_PUBLIC,
+			SubnetType: awsec2.SubnetType_PRIVATE_ISOLATED,
 		},
-		PubliclyAccessible:  jsii.Bool(true),
+		PubliclyAccessible:  jsii.Bool(false),
 		SecurityGroups:      &[]awsec2.ISecurityGroup{dbSecurityGroup},
 		Credentials:         awsrds.Credentials_FromGeneratedSecret(jsii.String("dbadmin"), nil),
 		AllocatedStorage:    jsii.Number(20),
