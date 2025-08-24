@@ -1,14 +1,13 @@
 package stack
 
 import (
-	"net/url"
-
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awscognito"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 
 	"os"
+	"strings"
 )
 
 type AuthenticationStackProps struct {
@@ -18,6 +17,20 @@ type AuthenticationStackProps struct {
 type AuthenticationStack struct {
 	Stack awscdk.Stack
 }
+
+// .env read helpers
+func toPtrs(list []string) []*string {
+	out := make([]*string, 0, len(list))
+	for _, s := range list {
+		s = strings.TrimSpace(s)
+		if s != "" {
+			out = append(out, jsii.String(s))
+		}
+	}
+	return out
+}
+
+func load(urls string) []*string { return toPtrs(strings.Split(urls, ",")) }
 
 func NewAuthenticationStack(scope constructs.Construct, id string, props *AuthenticationStackProps) *AuthenticationStack {
 	var sprops awscdk.StackProps
@@ -87,6 +100,9 @@ func NewAuthenticationStack(scope constructs.Construct, id string, props *Authen
 
 	//
 
+	callbackUrls := load(os.Getenv("CALLBACK_URLS"))
+	logoutUrls := load(os.Getenv("LOGOUT_URLS"))
+
 	webClient := userPool.AddClient(jsii.String("WebClient"), &awscognito.UserPoolClientOptions{
 		GenerateSecret: jsii.Bool(false), // public client (browser)
 		AuthFlows: &awscognito.AuthFlow{
@@ -102,16 +118,12 @@ func NewAuthenticationStack(scope constructs.Construct, id string, props *Authen
 				awscognito.OAuthScope_EMAIL(),
 				awscognito.OAuthScope_PROFILE(),
 			},
-			CallbackUrls: &[]*string{
-				jsii.String("http://localhost:5173/"),
-			},
-			LogoutUrls: &[]*string{
-				jsii.String("http://localhost:5173/"),
-			},
+			CallbackUrls: &callbackUrls,
+			LogoutUrls:   &logoutUrls,
 		},
 		SupportedIdentityProviders: &[]awscognito.UserPoolClientIdentityProvider{
 			awscognito.UserPoolClientIdentityProvider_COGNITO(),
-			// Google will be added in the next step
+			// google support
 			awscognito.UserPoolClientIdentityProvider_GOOGLE(),
 		},
 		// Recommended for browsers
@@ -127,24 +139,31 @@ func NewAuthenticationStack(scope constructs.Construct, id string, props *Authen
 		Value: webClient.UserPoolClientId(),
 	})
 
-	//
-
-	awscdk.NewCfnOutput(stack, jsii.String("AuthorizeUrlTemplate"), &awscdk.CfnOutputProps{
-		// Helpful to test the redirect immediately
-		Value: jsii.String("{{HostedUIDomainBaseUrl}}/oauth2/authorize?client_id={{UserPoolClientId}}&response_type=code&scope=openid+email+profile&redirect_uri=http://localhost:5173/callback"),
+	awscdk.NewCfnOutput(stack, jsii.String("CallbackUrls"), &awscdk.CfnOutputProps{
+		Value: jsii.String(os.Getenv("CALLBACK_URLS")),
+	})
+	awscdk.NewCfnOutput(stack, jsii.String("LogoutUrls"), &awscdk.CfnOutputProps{
+		Value: jsii.String(os.Getenv("LOGOUT_URLS")),
 	})
 
-	redirectUri := "http://localhost:5173/callback"
-	awscdk.NewCfnOutput(stack, jsii.String("AuthorizeUrl"), &awscdk.CfnOutputProps{
-		Value: jsii.String(
-			*domain.BaseUrl(&awscognito.BaseUrlOptions{}) +
-				"/oauth2/authorize" +
-				"?client_id=" + *webClient.UserPoolClientId() +
-				"&response_type=code" +
-				"&scope=openid+email+profile" +
-				"&redirect_uri=" + url.QueryEscape(redirectUri),
-		),
-	})
+	// //
+
+	// awscdk.NewCfnOutput(stack, jsii.String("AuthorizeUrlTemplate"), &awscdk.CfnOutputProps{
+	// 	// Helpful to test the redirect immediately
+	// 	Value: jsii.String("{{HostedUIDomainBaseUrl}}/oauth2/authorize?client_id={{UserPoolClientId}}&response_type=code&scope=openid+email+profile&redirect_uri=http://localhost:5173/callback"),
+	// })
+
+	// redirectUri := "http://localhost:5173/callback"
+	// awscdk.NewCfnOutput(stack, jsii.String("AuthorizeUrl"), &awscdk.CfnOutputProps{
+	// 	Value: jsii.String(
+	// 		*domain.BaseUrl(&awscognito.BaseUrlOptions{}) +
+	// 			"/oauth2/authorize" +
+	// 			"?client_id=" + *webClient.UserPoolClientId() +
+	// 			"&response_type=code" +
+	// 			"&scope=openid+email+profile" +
+	// 			"&redirect_uri=" + url.QueryEscape(redirectUri),
+	// 	),
+	// })
 
 	return &AuthenticationStack{
 		Stack: stack,
