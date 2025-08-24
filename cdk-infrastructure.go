@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2" // core
@@ -8,6 +9,8 @@ import (
 	"github.com/aws/jsii-runtime-go"
 
 	stack "cdk-infrastructure/internal/stack"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -16,6 +19,12 @@ func main() {
 	app := awscdk.NewApp(nil)
 
 	stack.NewFrontendStack(app, "FrontendStack", &stack.FrontendStackProps{
+		Props: awscdk.StackProps{
+			Env: env(),
+		},
+	})
+
+	stack.NewFrontendHccStack(app, "FrontendHccStack", &stack.FrontendHccStackProps{
 		Props: awscdk.StackProps{
 			Env: env(),
 		},
@@ -61,6 +70,16 @@ func main() {
 
 		Vpc:             database.Vpc,
 		DbSecurityGroup: database.DbSecurityGroup,
+	})
+
+	if err := godotenv.Load(); err != nil {
+		log.Println(".env file not found, relying on system env vars")
+	}
+
+	stack.NewAuthenticationStack(app, "AuthenticationStack", &stack.AuthenticationStackProps{
+		Props: awscdk.StackProps{
+			Env: env(),
+		},
 	})
 
 	app.Synth(nil)
