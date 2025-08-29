@@ -5,12 +5,11 @@ import (
 	"os"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2" // core
+	"github.com/joho/godotenv"
 
 	"github.com/aws/jsii-runtime-go"
 
 	stack "cdk-infrastructure/internal/stack"
-
-	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -79,6 +78,13 @@ func main() {
 	stack.NewAuthenticationStack(app, "AuthenticationStack", &stack.AuthenticationStackProps{
 		Props: awscdk.StackProps{
 			Env: env(),
+		},
+	})
+
+	stack.NewImageStack(app, "ImageStack", &stack.ImageStackProps{
+		Props: awscdk.StackProps{
+			Description: jsii.String("Stack for all images related to the events system"),
+			Env:         env(),
 		},
 	})
 
