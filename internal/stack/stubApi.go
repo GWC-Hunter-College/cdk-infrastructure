@@ -40,10 +40,10 @@ func NewStubApiStack(scope constructs.Construct, id string, props *StubApiStackP
 
 	// add route to HTTP API
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
-		Path:    jsii.String("/pingTest"),
+		Path:    jsii.String("/health"),
 		Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
 		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
-			jsii.String("PingLambdaIntegration"),
+			jsii.String("StubHealthIntegration"),
 			pingFunction,
 			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 		),

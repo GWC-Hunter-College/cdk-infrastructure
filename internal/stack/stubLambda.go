@@ -34,9 +34,9 @@ func NewStubLambdaStack(scope constructs.Construct, id string, props *StubLambda
 	//  Test ping and s3 image storage test
 	//  =======================================
 	// create ping lambda function
-	pingFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Ping Function"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("PingTest"),
-		Entry:        jsii.String("./lambda/ping/main.go"),
+	pingFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Stub Health Function"), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("StubHealthTest"),
+		Entry:        jsii.String("./stub/lambda/health/main.go"),
 	})
 
 	return &StubLambdaStack{
