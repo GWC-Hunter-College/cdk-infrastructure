@@ -1,0 +1,5 @@
+legit like all the endpoints for specific clubs using club id
+also where we handle club verification
+
+no queries in this specific folder but this is the parent of the rest of the club specific endpoints
+

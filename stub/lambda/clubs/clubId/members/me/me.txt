@@ -1,0 +1,5 @@
+put the query of:
+
+DELETE /clubs/{clubId}/members/me
+
+in this folder

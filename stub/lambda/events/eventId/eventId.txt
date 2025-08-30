@@ -1,0 +1,8 @@
+parent of all endpoints grabbing specific attributes of a 'posted' event
+
+
+put the query of:
+
+GET /events/{eventId}/
+
+in this folder

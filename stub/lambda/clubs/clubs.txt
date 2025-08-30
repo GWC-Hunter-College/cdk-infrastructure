@@ -1,0 +1,10 @@
+all queries regarding clubs
+
+put the query of:
+
+POST /clubs
+GET /clubs/verified=true
+
+in this folder
+
+later we need PATCH and Delete for clubs

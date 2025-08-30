@@ -1,0 +1,5 @@
+put the query of:
+
+PUT /clubs/{clubId}/members/roles?is_eboard=<TRUE|FALSE>&is_owner=<TRUE|FALSE>
+
+in this folder
