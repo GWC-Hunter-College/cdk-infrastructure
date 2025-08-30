@@ -1,0 +1,5 @@
+put the query of:
+
+POST /clubs/thumbnails?filetype=<FILETYPE>&filename=<FILENAME>
+
+in this folder

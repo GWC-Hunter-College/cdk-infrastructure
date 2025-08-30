@@ -1,0 +1,5 @@
+put the query of:
+
+GET /clubs/{clubId}/events/drafts
+
+in this folder

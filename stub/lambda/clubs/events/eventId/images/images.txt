@@ -1,0 +1,6 @@
+put the query of:
+
+GET /clubs/{clubId}/events/{eventId}/images
+POST /clubs/{clubId}/events/{eventId}/images
+
+in this folder

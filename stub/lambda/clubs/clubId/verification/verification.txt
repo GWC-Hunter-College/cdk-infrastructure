@@ -1,0 +1,6 @@
+put the query of:
+
+POST /clubs/{clubId}/verification
+DELETE /clubs/{clubId}/verification
+
+in this folder

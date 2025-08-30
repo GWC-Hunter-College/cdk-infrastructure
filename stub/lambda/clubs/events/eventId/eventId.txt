@@ -1,0 +1,9 @@
+parent for all endpoints of specific club event attributes
+
+put the query of:
+
+GET /clubs/{clubId}/events/{eventId}
+PATCH /clubs/{clubId}/events/{eventId}
+DELETE /clubs/{clubId}/events/{eventId}
+
+in this folder

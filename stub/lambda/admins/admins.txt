@@ -1,0 +1,10 @@
+queries for admin of event manager (verifies clubs to club lists, this is so 
+a random person doesnt make some funky ahh clubs)
+
+put the query of:
+
+GET /admins
+POST /admins/
+
+
+in this folder

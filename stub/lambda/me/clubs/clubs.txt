@@ -1,0 +1,8 @@
+queries of users 
+
+
+put the query of:
+
+GET /me/clubs
+
+in this folder
