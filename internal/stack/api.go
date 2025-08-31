@@ -49,7 +49,7 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	// create ping lambda function
 	pingFunc := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Ping Function"), &awscdklambdagoalpha.GoFunctionProps{
 		FunctionName: jsii.String("PingTest"),
-		Entry:        jsii.String("./lambda/ping/main.go"),
+		Entry:        jsii.String("./lambda/api/ping/main.go"),
 	})
 
 	// add route to HTTP API
@@ -66,7 +66,7 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	// create presign lambda function
 	presignFunc := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Presign Function"), &awscdklambdagoalpha.GoFunctionProps{
 		FunctionName: jsii.String("S3Presign"),
-		Entry:        jsii.String("./lambda/presign/main.go"),
+		Entry:        jsii.String("./lambda/api/presign/main.go"),
 	})
 
 	// add route to HTTP API
@@ -92,7 +92,7 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	lambdaSecurityGroup := props.LambdaSecurityGroup
 
 	dbTestFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("DBTestFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		Entry:      jsii.String("lambda/database/test/main.go"), // path to folder with main.go
+		Entry:      jsii.String("lambda/api/database/test/main.go"), // path to folder with main.go
 		MemorySize: jsii.Number(256),
 		Timeout:    awscdk.Duration_Seconds(jsii.Number(10)),
 		Environment: &map[string]*string{

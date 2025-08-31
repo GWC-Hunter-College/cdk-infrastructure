@@ -1,11 +1,9 @@
 package main
 
 import (
-	"log"
 	"os"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2" // core
-	"github.com/joho/godotenv"
 
 	"github.com/aws/jsii-runtime-go"
 
@@ -62,31 +60,31 @@ func main() {
 		LambdaSecurityGroup:               database.LambdaSecurityGroup,
 	})
 
-	stack.NewBastionStack(app, "BastionStack", &stack.BastionStackProps{
-		StackProps: awscdk.StackProps{
-			Env: env(),
-		},
+	// stack.NewBastionStack(app, "BastionStack", &stack.BastionStackProps{
+	// 	StackProps: awscdk.StackProps{
+	// 		Env: env(),
+	// 	},
 
-		Vpc:             database.Vpc,
-		DbSecurityGroup: database.DbSecurityGroup,
-	})
+	// 	Vpc:             database.Vpc,
+	// 	DbSecurityGroup: database.DbSecurityGroup,
+	// })
 
-	if err := godotenv.Load(); err != nil {
-		log.Println(".env file not found, relying on system env vars")
-	}
+	// if err := godotenv.Load(); err != nil {
+	// 	log.Println(".env file not found, relying on system env vars")
+	// }
 
-	stack.NewAuthenticationStack(app, "AuthenticationStack", &stack.AuthenticationStackProps{
-		Props: awscdk.StackProps{
-			Env: env(),
-		},
-	})
+	// stack.NewAuthenticationStack(app, "AuthenticationStack", &stack.AuthenticationStackProps{
+	// 	Props: awscdk.StackProps{
+	// 		Env: env(),
+	// 	},
+	// })
 
-	stack.NewImageStack(app, "ImageStack", &stack.ImageStackProps{
-		Props: awscdk.StackProps{
-			Description: jsii.String("Stack for all images related to the events system"),
-			Env:         env(),
-		},
-	})
+	// stack.NewImageStack(app, "ImageStack", &stack.ImageStackProps{
+	// 	Props: awscdk.StackProps{
+	// 		Description: jsii.String("Stack for all images related to the events system"),
+	// 		Env:         env(),
+	// 	},
+	// })
 
 	app.Synth(nil)
 }
