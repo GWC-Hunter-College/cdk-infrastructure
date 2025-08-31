@@ -3,6 +3,7 @@ package stack
 import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
+	"github.com/aws/aws-cdk-go/awscdklambdagoalpha/v2"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 )
@@ -52,7 +53,7 @@ func NewImageStack(scope constructs.Construct, id string, props *ImageStackProps
 		EnforceSSL:        jsii.Bool(true),
 	})
 
-	_ = awss3.NewBucket(stack, jsii.String("event-images-bucket"), &awss3.BucketProps{
+	bucket := awss3.NewBucket(stack, jsii.String("event-images-bucket"), &awss3.BucketProps{
 		BucketName: jsii.String("hc-event-images"),
 		Cors: &[]*awss3.CorsRule{
 			{
@@ -68,6 +69,18 @@ func NewImageStack(scope constructs.Construct, id string, props *ImageStackProps
 		BlockPublicAccess: awss3.BlockPublicAccess_BLOCK_ALL(),
 		EnforceSSL:        jsii.Bool(true),
 	})
+
+	// TODO: Add Event Notification to trigger a Lambda to add image details to RDS
+
+	pushDetailsArn := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Insert Images into RDS Function"), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("InsertS3ImageDetails"),
+		Entry:        jsii.String("./lambda/images/main.go"),
+	})
+
+	bucket.AddEventNotification(awss3.EventType_OBJECT_CREATED, awss3.BucketNotificationDestinationConfig{
+		Arn:  nil,
+		Type: awss3.BucketNotificationDestinationType_LAMBDA,
+	}, nil)
 
 	return stack
 }
