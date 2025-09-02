@@ -15,6 +15,8 @@ type StubApiStackProps struct {
 	Props awscdk.StackProps
 
 	PingFunction awslambda.IFunction
+
+	StubStudentBundle StubStudentFunctions
 }
 
 func NewStubApiStack(scope constructs.Construct, id string, props *StubApiStackProps) awscdk.Stack {
@@ -34,7 +36,7 @@ func NewStubApiStack(scope constructs.Construct, id string, props *StubApiStackP
 	})
 
 	//  =======================================
-	// import functions through props
+	// import health function through props
 	//  =======================================
 	pingFunction := props.PingFunction
 
@@ -49,11 +51,30 @@ func NewStubApiStack(scope constructs.Construct, id string, props *StubApiStackP
 		),
 	})
 
+	//  =======================================
+	// import student endpoint functions through props
+	//  =======================================
+	studentsBundle := props.StubStudentBundle
+
+	studentsMeClubsFunction := studentsBundle.StubStudentsMeClubsGetEndpoint
+	// add route to HTTP API
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path:    jsii.String("/me/clubs"),
+		Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
+		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
+			jsii.String("tubStudentsMeClubsGetIntegration"),
+			studentsMeClubsFunction,
+			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
+		),
+	})
+
+	//  =======================================
+	// 	prints
+	//  =======================================
 	// log HTTP API endpoint
 	awscdk.NewCfnOutput(stack, jsii.String("myHttpApiEndpoint"), &awscdk.CfnOutputProps{
 		Value:       httpApi.ApiEndpoint(),
 		Description: jsii.String("HTTP API Endpoint"),
 	})
-
 	return stack
 }

@@ -92,6 +92,8 @@ func main() {
 			Env: env(),
 		},
 		PingFunction: stubLambda.PingFunction,
+
+		StubStudentBundle: stubLambda.StubStudentBundle,
 	})
 
 	app.Synth(nil)

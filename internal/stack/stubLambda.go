@@ -19,6 +19,12 @@ type StubLambdaStack struct {
 	Stack awscdk.Stack
 
 	PingFunction awslambda.IFunction
+
+	StubStudentBundle StubStudentFunctions
+}
+
+type StubStudentFunctions struct {
+	StubStudentsMeClubsGetEndpoint awslambda.IFunction
 }
 
 func NewStubLambdaStack(scope constructs.Construct, id string, props *StubLambdaStackProps) *StubLambdaStack {
@@ -31,16 +37,30 @@ func NewStubLambdaStack(scope constructs.Construct, id string, props *StubLambda
 	// The code that defines your stack goes here
 
 	//  =======================================
-	//  Test ping and s3 image storage test
+	//  health
 	//  =======================================
-	// create ping lambda function
+	// create health check lambda function
 	pingFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Stub Health Function"), &awscdklambdagoalpha.GoFunctionProps{
 		FunctionName: jsii.String("StubHealthTest"),
 		Entry:        jsii.String("./stub/lambda/health/main.go"),
 	})
 
+	//  =======================================
+	//  students
+	//  =======================================
+	studentsMeClubsFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Stub Students Me Club Get EndPoint Funtion"), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("StubStudentsMeClubsGetEndpoint"),
+		Entry:        jsii.String("./stub/lambda/me/clubs/get.go"),
+	})
+
+	studentsBundle := StubStudentFunctions{
+		StubStudentsMeClubsGetEndpoint: studentsMeClubsFunction,
+	}
+
 	return &StubLambdaStack{
 		Stack:        stack,
 		PingFunction: pingFunction,
+
+		StubStudentBundle: studentsBundle,
 	}
 }
