@@ -17,7 +17,7 @@ func init() {
 
 func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	resp := &response{
-		Message: "hello world!",
+		Message: "Server running",
 	}
 	body, err := json.Marshal(resp)
 	if err != nil {

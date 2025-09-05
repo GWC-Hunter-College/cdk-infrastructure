@@ -29,12 +29,6 @@ func main() {
 		},
 	})
 
-	images := stack.NewStorageStack(app, "StorageStack", &stack.StorageStackProps{
-		Props: awscdk.StackProps{
-			Env: env(),
-		},
-	})
-
 	network := stack.NewNetworkStack(app, "NetworkStack", &stack.NetworkStackProps{
 		Props: awscdk.StackProps{
 			Env: env(),
@@ -60,7 +54,6 @@ func main() {
 		Props: awscdk.StackProps{
 			Env: env(),
 		},
-		ImagesBucket: images.Bucket,
 
 		Vpc:                               database.Vpc,
 		LambdaSecretsManagerSecurityGroup: database.LambdaSecretsManagerSecurityGroup,

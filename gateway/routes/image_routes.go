@@ -1,0 +1,25 @@
+package gateway_routes
+
+import (
+	"cdk-infrastructure/gateway/integrations"
+
+	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
+	"github.com/aws/jsii-runtime-go"
+)
+
+// Helper function to add image routes to the HTTP API
+// Routes:
+//
+//	POST /clubs/{clubId}/events/{eventId}/images
+func ImageRoutes(httpApi awsapigatewayv2.HttpApi, stack awscdk.Stack, eventImagesBucket awss3.IBucket) {
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path: jsii.String("/clubs/{clubId}/events/{eventId}/images"),
+		Methods: &[]awsapigatewayv2.HttpMethod{
+			awsapigatewayv2.HttpMethod_POST,
+			awsapigatewayv2.HttpMethod_OPTIONS,
+		},
+		Integration: integrations.EventImagesIntegration(stack, eventImagesBucket),
+	})
+}
