@@ -82,18 +82,10 @@ func main() {
 		},
 	})
 
-	stubLambda := stack.NewStubLambdaStack(app, "StubLambdaStack", &stack.StubLambdaStackProps{
+	stack.NewStubLambdaStack(app, "StubLambdaStack", &stack.StubLambdaStackProps{
 		Props: awscdk.StackProps{
 			Env: env(),
 		},
-	})
-	stack.NewStubApiStack(app, "StubApiStack", &stack.StubApiStackProps{
-		Props: awscdk.StackProps{
-			Env: env(),
-		},
-		PingFunction: stubLambda.PingFunction,
-
-		StubStudentBundle: stubLambda.StubStudentBundle,
 	})
 
 	app.Synth(nil)
