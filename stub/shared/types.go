@@ -23,6 +23,40 @@ type Events struct {
 	Events []Event `json:"clubs"`
 }
 
+type EventDetailed struct {
+	ID          int         `json:"id"`
+	Title       string      `json:"title"`
+	Location    string      `json:"location,omitempty"`
+	RSVPLink    string      `json:"rsvpLink,omitempty"`
+	Status      EventStatus `json:"status"`
+	StartISO    string      `json:"startDate"`
+	EndISO      string      `json:"endDate"`
+	Timezone    string      `json:"timezone,omitempty"`
+	CreateISO   string      `json:"createDate"`
+	UpdateISO   string      `json:"updateDate"`
+	Description string      `json:"description,omitempty"`
+}
+
+type Image struct {
+	ID        int    `json:"id"`
+	Purpose   string `json:"purpose"`
+	URL       string `json:"url"`
+	CreateISO string `json:"createDate"`
+}
+
+type Images struct {
+	Images []Image `json:"images"`
+}
+
+type EventDescription struct {
+	Description string `json:"description"`
+}
+
+type EventOwners struct {
+	Owner      Club   `json:"owner"`
+	Associates []Club `json:"associates"`
+}
+
 type Club struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`

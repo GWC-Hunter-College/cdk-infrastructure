@@ -57,29 +57,6 @@ func NewStubLambdaStack(scope constructs.Construct, id string, props *StubLambda
 	//  =======================================
 	// create health check lambda function
 	pingFunction := AddStubRoute(stack, httpApi, "/health", awsapigatewayv2.HttpMethod_GET)
-	// //  =======================================
-	// //  students
-	// //  =======================================
-	// studentsMeClubsFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Stub /students/me/club Get EndPoint Funtion"), &awscdklambdagoalpha.GoFunctionProps{
-	// 	FunctionName: jsii.String("StubStudentsMeClubsGetEndpoint"),
-	// 	Entry:        jsii.String("./stub/lambda/me/clubs/get.go"),
-	// })
-
-	// studentsMeClubsEventsFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Stub /students/me/club/events Get EndPoint Funtion"), &awscdklambdagoalpha.GoFunctionProps{
-	// 	FunctionName: jsii.String("StubStudentsMeClubsEventsGetEndpoint"),
-	// 	Entry:        jsii.String("./stub/lambda/me/clubs/events/get.go"),
-	// })
-
-	// studentsMeClubsEboardFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Stub /students/me/club/eboard Get EndPoint Funtion"), &awscdklambdagoalpha.GoFunctionProps{
-	// 	FunctionName: jsii.String("StubStudentsMeClubsEBoardGetEndpoint"),
-	// 	Entry:        jsii.String("./stub/lambda/me/clubs/eboard/get.go"),
-	// })
-
-	// studentsBundle := StubStudentFunctions{
-	// 	StubStudentsMeClubsGetEndpoint:       studentsMeClubsFunction,
-	// 	StubStudentsMeClubsEventsGetEndpoint: studentsMeClubsEventsFunction,
-	// 	StubStudentsMeClubsEboardGetEndpoint: studentsMeClubsEboardFunction,
-	// }
 
 	//  =======================================
 	//  students
@@ -96,53 +73,29 @@ func NewStubLambdaStack(scope constructs.Construct, id string, props *StubLambda
 		StubStudentsMeClubsEboardGetEndpoint: studentsMeClubsEboardGetFunction,
 	}
 
-	// //  =======================================
-	// // import health function through props
-	// //  =======================================
-	// // add route to HTTP API
-	// httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
-	// 	Path:    jsii.String("/health"),
-	// 	Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
-	// 	Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
-	// 		jsii.String("StubHealthIntegration"),
-	// 		pingFunction,
-	// 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
-	// 	),
-	// })
+	//  =======================================
+	//  events
+	//  =======================================
+	eventsGetFunction := AddStubRoute(stack, httpApi, "/events", awsapigatewayv2.HttpMethod_GET)
+	_ = eventsGetFunction
 
-	// //  =======================================
-	// // import student endpoint functions through props
-	// //  =======================================
-	// // add routes to HTTP API
-	// httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
-	// 	Path:    jsii.String("/me/clubs"),
-	// 	Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
-	// 	Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
-	// 		jsii.String("StubStudentsMeClubsGetIntegration"),
-	// 		studentsMeClubsFunction,
-	// 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
-	// 	),
-	// })
+	eventsEventIdGetFunction := AddStubRoute(stack, httpApi, "/events/{eventId}", awsapigatewayv2.HttpMethod_GET)
+	_ = eventsEventIdGetFunction
 
-	// httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
-	// 	Path:    jsii.String("/me/clubs/events"),
-	// 	Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
-	// 	Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
-	// 		jsii.String("StubStudentsMeClubsGetIntegration"),
-	// 		studentsMeClubsEventsFunction,
-	// 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
-	// 	),
-	// })
+	eventsEventIdImagesGetFunction := AddStubRoute(stack, httpApi, "/events/{eventId}/images", awsapigatewayv2.HttpMethod_GET)
+	_ = eventsEventIdImagesGetFunction
 
-	// httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
-	// 	Path:    jsii.String("/me/clubs/eboard"),
-	// 	Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
-	// 	Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
-	// 		jsii.String("StubStudentsMeClubsGetIntegration"),
-	// 		studentsMeClubsEboardFunction,
-	// 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
-	// 	),
-	// })
+	eventsEventIdDescriptionGetFunction := AddStubRoute(stack, httpApi, "/events/{eventId}/description", awsapigatewayv2.HttpMethod_GET)
+	_ = eventsEventIdDescriptionGetFunction
+
+	eventsEventIdClubsGetFunction := AddStubRoute(stack, httpApi, "/events/{eventId}/clubs", awsapigatewayv2.HttpMethod_GET)
+	_ = eventsEventIdClubsGetFunction
+
+	//  =======================================
+	//  events
+	//  =======================================
+	clubsGetFunction := AddStubRoute(stack, httpApi, "/clubs", awsapigatewayv2.HttpMethod_GET)
+	_ = clubsGetFunction
 
 	//  =======================================
 	// 	prints
@@ -174,7 +127,7 @@ func NewStubLambdaStack(scope constructs.Construct, id string, props *StubLambda
 //	e.g. path="/me/clubs/eboard", method=GET -> "./stub/lambda/me/clubs/eboard/get.go"
 func AddStubRoute(scope constructs.Construct, httpApi awsapigatewayv2.HttpApi, path string, method awsapigatewayv2.HttpMethod) awslambda.IFunction {
 	cleanPath := normalizePath(path)
-	pascal := pathToPascal(cleanPath)
+	pascal := pathToPascal(cleanPath) // now strips {param}
 	methodTitle := httpMethodTitle(method)
 	methodLower := strings.ToLower(httpMethodString(method))
 
@@ -182,7 +135,10 @@ func AddStubRoute(scope constructs.Construct, httpApi awsapigatewayv2.HttpApi, p
 	constructID := fmt.Sprintf("Stub %s %s Endpoint Function", cleanPath, methodTitle)
 	integrationID := fmt.Sprintf("Stub%s%sIntegration", pascal, methodTitle)
 
-	entryPath := fmt.Sprintf("./stub/lambda%s/%s.go", cleanPath, methodLower)
+	// NEW: use a filesystem-safe version of the path (remove braces)
+	fsPath := sanitizeForFS(cleanPath) // e.g. "/events/{eventId}" -> "/events/eventId"
+
+	entryPath := fmt.Sprintf("./stub/lambda%s/%s.go", fsPath, methodLower)
 	entryPath = strings.ReplaceAll(entryPath, "//", "/")
 
 	fn := awscdklambdagoalpha.NewGoFunction(scope, jsii.String(constructID), &awscdklambdagoalpha.GoFunctionProps{
@@ -225,6 +181,7 @@ func normalizePath(p string) string {
 }
 
 // "/me/clubs/eboard" -> "MeClubsEboard"
+// "/events/{eventId}" -> "EventsEventId"
 func pathToPascal(p string) string {
 	trim := strings.Trim(p, "/")
 	if trim == "" {
@@ -232,9 +189,28 @@ func pathToPascal(p string) string {
 	}
 	parts := strings.Split(trim, "/")
 	for i, seg := range parts {
+		seg = strings.TrimSpace(seg)
+		// strip {param} braces for naming
+		if len(seg) >= 2 && seg[0] == '{' && seg[len(seg)-1] == '}' {
+			seg = seg[1 : len(seg)-1]
+		}
 		parts[i] = toTitle(seg)
 	}
 	return strings.Join(parts, "")
+}
+
+// "/events/{eventId}" -> "/events/eventId"
+// "/clubs/{clubId}/events/{eventId}" -> "/clubs/clubId/events/eventId"
+func sanitizeForFS(p string) string {
+	parts := strings.Split(p, "/")
+	for i, seg := range parts {
+		if len(seg) >= 2 && seg[0] == '{' && seg[len(seg)-1] == '}' {
+			parts[i] = seg[1 : len(seg)-1] // drop braces
+		}
+	}
+	out := strings.Join(parts, "/")
+	out = strings.ReplaceAll(out, "//", "/")
+	return out
 }
 
 func toTitle(s string) string {
