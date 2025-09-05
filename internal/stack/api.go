@@ -43,6 +43,20 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	// create HTTP API
 	httpApi := awsapigatewayv2.NewHttpApi(stack, jsii.String("ClubEventApi"), &awsapigatewayv2.HttpApiProps{
 		ApiName: jsii.String("ClubEventApi"),
+		CorsPreflight: &awsapigatewayv2.CorsPreflightOptions{
+			AllowHeaders: &[]*string{
+				jsii.String("*"),
+			},
+			AllowMethods: &[]awsapigatewayv2.CorsHttpMethod{
+				awsapigatewayv2.CorsHttpMethod_GET,
+				awsapigatewayv2.CorsHttpMethod_POST,
+				awsapigatewayv2.CorsHttpMethod_OPTIONS,
+				awsapigatewayv2.CorsHttpMethod_PATCH,
+			},
+			AllowOrigins: &[]*string{
+				jsii.String("*"), // allowing from all origins atm, should be locked down later
+			},
+		},
 	})
 
 	//  =======================================
