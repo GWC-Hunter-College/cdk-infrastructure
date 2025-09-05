@@ -24,7 +24,9 @@ type StubLambdaStack struct {
 }
 
 type StubStudentFunctions struct {
-	StubStudentsMeClubsGetEndpoint awslambda.IFunction
+	StubStudentsMeClubsGetEndpoint       awslambda.IFunction
+	StubStudentsMeClubsEventsGetEndpoint awslambda.IFunction
+	StubStudentsMeClubsEboardGetEndpoint awslambda.IFunction
 }
 
 func NewStubLambdaStack(scope constructs.Construct, id string, props *StubLambdaStackProps) *StubLambdaStack {
@@ -48,13 +50,25 @@ func NewStubLambdaStack(scope constructs.Construct, id string, props *StubLambda
 	//  =======================================
 	//  students
 	//  =======================================
-	studentsMeClubsFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Stub Students Me Club Get EndPoint Funtion"), &awscdklambdagoalpha.GoFunctionProps{
+	studentsMeClubsFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Stub /students/me/club Get EndPoint Funtion"), &awscdklambdagoalpha.GoFunctionProps{
 		FunctionName: jsii.String("StubStudentsMeClubsGetEndpoint"),
 		Entry:        jsii.String("./stub/lambda/me/clubs/get.go"),
 	})
 
+	studentsMeClubsEventsFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Stub /students/me/club/Events Get EndPoint Funtion"), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("StubStudentsMeClubsEventsGetEndpoint"),
+		Entry:        jsii.String("./stub/lambda/me/clubs/events/get.go"),
+	})
+
+	studentsMeClubsEboardFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Stub /students/me/club/Eboard Get EndPoint Funtion"), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("StubStudentsMeClubsEBoardGetEndpoint"),
+		Entry:        jsii.String("./stub/lambda/me/clubs/eboard/get.go"),
+	})
+
 	studentsBundle := StubStudentFunctions{
-		StubStudentsMeClubsGetEndpoint: studentsMeClubsFunction,
+		StubStudentsMeClubsGetEndpoint:       studentsMeClubsFunction,
+		StubStudentsMeClubsEventsGetEndpoint: studentsMeClubsEventsFunction,
+		StubStudentsMeClubsEboardGetEndpoint: studentsMeClubsEboardFunction,
 	}
 
 	return &StubLambdaStack{

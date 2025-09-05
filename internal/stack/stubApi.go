@@ -57,13 +57,35 @@ func NewStubApiStack(scope constructs.Construct, id string, props *StubApiStackP
 	studentsBundle := props.StubStudentBundle
 
 	studentsMeClubsFunction := studentsBundle.StubStudentsMeClubsGetEndpoint
-	// add route to HTTP API
+	// add routes to HTTP API
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path:    jsii.String("/me/clubs"),
 		Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
 		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
-			jsii.String("tubStudentsMeClubsGetIntegration"),
+			jsii.String("StubStudentsMeClubsGetIntegration"),
 			studentsMeClubsFunction,
+			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
+		),
+	})
+
+	studentsMeClubsEventsFunction := studentsBundle.StubStudentsMeClubsEventsGetEndpoint
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path:    jsii.String("/me/clubs/events"),
+		Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
+		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
+			jsii.String("StubStudentsMeClubsGetIntegration"),
+			studentsMeClubsEventsFunction,
+			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
+		),
+	})
+
+	studentsMeClubsEboardFunction := studentsBundle.StubStudentsMeClubsEboardGetEndpoint
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path:    jsii.String("/me/clubs/eboard"),
+		Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
+		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
+			jsii.String("StubStudentsMeClubsGetIntegration"),
+			studentsMeClubsEboardFunction,
 			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 		),
 	})

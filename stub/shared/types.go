@@ -1,7 +1,5 @@
 package shared
 
-// Exported (capitalized) so other packages can use them.
-
 type EventStatus string
 
 const (
@@ -10,14 +8,27 @@ const (
 	StatusArchived EventStatus = "archived"
 )
 
-type Club struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Verified bool   `json:"verified,omitempty"`
-	Role     string `json:"role,omitempty"` // optional: "member"|"eboard"|"owner"
+type Event struct {
+	ID       int         `json:"id"`
+	Title    string      `json:"title"`
+	Location string      `json:"location,omitempty"`
+	RSVPLink string      `json:"rsvpLink,omitempty"`
+	Status   EventStatus `json:"status"`
+	StartISO string      `json:"startDate"`
+	EndISO   string      `json:"endDate"`
+	// Timezone string      `json:"timezone"`
 }
 
-type MeClubsResponse struct {
+type Events struct {
+	Events []Event `json:"clubs"`
+}
+
+type Club struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type Clubs struct {
 	Clubs []Club `json:"clubs"`
 }
 

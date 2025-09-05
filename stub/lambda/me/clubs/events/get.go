@@ -12,10 +12,26 @@ import (
 
 func handle(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 	// Stubbed data (e.g., for kyle@example.com)
-	resp := shared.Clubs{
-		Clubs: []shared.Club{
-			{ID: 2, Name: "Girls Who Code @ Hunter"},
-			{ID: 3, Name: "Hunter CS Club"},
+	resp := shared.Events{
+		Events: []shared.Event{
+			{
+				ID:       1,
+				Title:    "First Kickoff Meeting",
+				Location: "Room 101, Hunter College",
+				RSVPLink: "https://www.hunterhacks.com/",
+				Status:   shared.StatusPosted,
+				StartISO: "2025-09-15 17:00:00",
+				EndISO:   "2025-09-15 19:00:00",
+			},
+			{
+				ID:       2,
+				Title:    "cs workshop",
+				Location: "Room 304, narnia",
+				RSVPLink: "https://www.hunterhacks.com/",
+				Status:   shared.StatusPosted,
+				StartISO: "2025-10-28 11:00:00",
+				EndISO:   "2025-10-28 19:00:00",
+			},
 		},
 	}
 

@@ -15,7 +15,7 @@ func handle(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.API
 	resp := shared.Clubs{
 		Clubs: []shared.Club{
 			{ID: 2, Name: "Girls Who Code @ Hunter"},
-			{ID: 3, Name: "Hunter CS Club"},
+			// {ID: 3, Name: "Hunter CS Club"},
 		},
 	}
 
