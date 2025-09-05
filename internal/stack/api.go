@@ -1,6 +1,8 @@
 package stack
 
 import (
+	integrations "cdk-infrastructure/gateway/integrations/clubs/events/images"
+
 	"github.com/aws/aws-cdk-go/awscdk/v2" // core
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsrds"
@@ -19,12 +21,12 @@ type ApiStackProps struct {
 	Props        awscdk.StackProps
 	ImagesBucket awss3.IBucket
 
-	// DatabaseStackData DatabaseStack
 	Vpc                               awsec2.Vpc
 	LambdaSecretsManagerSecurityGroup awsec2.SecurityGroup
 	DbInstance                        awsrds.DatabaseInstance
 	ProxyEndpoint                     *string
 	LambdaSecurityGroup               awsec2.SecurityGroup
+	EventImageBucket                  awss3.IBucket
 }
 
 func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) awscdk.Stack {
@@ -66,12 +68,12 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	// create presign lambda function
 	presignFunc := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Presign Function"), &awscdklambdagoalpha.GoFunctionProps{
 		FunctionName: jsii.String("S3Presign"),
-		Entry:        jsii.String("./lambda/api/presign/main.go"),
+		Entry:        jsii.String("./lambda/api/presignTest"),
 	})
 
 	// add route to HTTP API
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
-		Path:    jsii.String("/presign"),
+		Path:    jsii.String("/presignTest"),
 		Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
 		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
 			jsii.String("PresignOptionsIntegration"),
@@ -117,6 +119,15 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 			dbTestFunction,
 			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 		),
+	})
+
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path: jsii.String("/clubs/{clubId}/events/{eventId}/images"),
+		Methods: &[]awsapigatewayv2.HttpMethod{
+			awsapigatewayv2.HttpMethod_POST,
+			awsapigatewayv2.HttpMethod_OPTIONS,
+		},
+		Integration: integrations.EventImagesIntegration(stack, props.EventImageBucket),
 	})
 
 	// log HTTP API endpoint
