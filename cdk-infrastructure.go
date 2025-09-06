@@ -50,6 +50,9 @@ func main() {
 		LambdaSecretsManagerSecurityGroup: network.LambdaSecretsManagerSecurityGroup,
 	})
 
+	if err := godotenv.Load(); err != nil {
+		log.Println(".env file not found, relying on system env vars")
+	}
 	authentication := stack.NewAuthenticationStack(app, "AuthenticationStack", &stack.AuthenticationStackProps{
 		Props: awscdk.StackProps{
 			Env: env(),
@@ -81,10 +84,6 @@ func main() {
 		Vpc:             database.Vpc,
 		DbSecurityGroup: database.DbSecurityGroup,
 	})
-
-	if err := godotenv.Load(); err != nil {
-		log.Println(".env file not found, relying on system env vars")
-	}
 
 	stubLambda := stack.NewStubLambdaStack(app, "StubLambdaStack", &stack.StubLambdaStackProps{
 		Props: awscdk.StackProps{
