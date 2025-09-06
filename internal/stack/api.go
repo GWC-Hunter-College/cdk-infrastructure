@@ -2,7 +2,11 @@ package stack
 
 import (
 	"github.com/aws/aws-cdk-go/awscdk/v2" // core
+	"github.com/aws/aws-cdk-go/awscdk/v2/awscognito"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
+	targets "github.com/aws/aws-cdk-go/awscdk/v2/awseventstargets"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsrds"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
 
@@ -25,6 +29,8 @@ type ApiStackProps struct {
 	DbInstance                        awsrds.DatabaseInstance
 	ProxyEndpoint                     *string
 	LambdaSecurityGroup               awsec2.SecurityGroup
+
+	UserPool awscognito.IUserPool
 }
 
 func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) awscdk.Stack {
@@ -118,6 +124,70 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 		),
 	})
+
+	//  =======================================
+	//  authenticaion lambda
+	//  =======================================
+
+	postConfirmFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("PostConfirmUserUpsertFunction"), &awscdklambdagoalpha.GoFunctionProps{
+		Entry:      jsii.String("lambda/auth/main.go"), // path to folder with main.go
+		MemorySize: jsii.Number(256),
+		Timeout:    awscdk.Duration_Seconds(jsii.Number(10)),
+		Environment: &map[string]*string{
+			"DB_SECRET_ARN": dbInstance.Secret().SecretArn(),
+			"DB_HOST":       proxyEndpoint,
+		},
+		Vpc: vpc,
+		SecurityGroups: &[]awsec2.ISecurityGroup{
+			lambdaSecretsManagerSecurityGroup,
+			lambdaSecurityGroup,
+		},
+		AllowPublicSubnet: jsii.Bool(true),
+	})
+	dbInstance.Secret().
+		GrantRead(postConfirmFunction, nil)
+
+	postConfirmFunction.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+		Actions: &[]*string{
+			jsii.String("cognito-idp:AdminGetUser"),
+		},
+		Resources: &[]*string{
+			props.UserPool.UserPoolArn(),
+		},
+	}))
+
+	// 	// DLQ for EventBridge → Lambda (ignor for now)
+	// dlq := awssqs.NewQueue(c, jsii.String("CognitoEventsDLQ"), &awssqs.QueueProps{
+	// 	RetentionPeriod: awscdk.Duration_Days(jsii.Number(14)),
+	// })
+
+	rule := awsevents.NewRule(stack, jsii.String("CognitoConfirmEventsRule"), &awsevents.RuleProps{
+		EventPattern: &awsevents.EventPattern{
+			Source:     &[]*string{jsii.String("aws.cognito-idp")},
+			DetailType: &[]*string{jsii.String("AWS API Call via CloudTrail")},
+			Detail: &map[string]interface{}{
+				"eventSource": []string{"cognito-idp.amazonaws.com"},
+				// For first-time creation
+				"eventName": []string{"ConfirmSignUp", "AdminConfirmSignUp"},
+				// Scope to your pool (nested under requestParameters)
+				"requestParameters": map[string]interface{}{
+					"userPoolId": []string{*props.UserPool.UserPoolId()},
+				},
+			},
+		},
+	})
+
+	// rule activates function
+	rule.AddTarget(targets.NewLambdaFunction(postConfirmFunction, &targets.LambdaFunctionProps{
+		RetryAttempts: jsii.Number(2),
+	}))
+
+	// dont want to deal with dlq rn
+	// // Target the Lambda, with DLQ and small retry budget
+	// 	rule.AddTarget(targets.NewLambdaFunction(userUpsertFn, &targets.LambdaFunctionProps{
+	// 		DeadLetterQueue: dlq,
+	// 		RetryAttempts:   jsii.Number(2),
+	// 	}))
 
 	// log HTTP API endpoint
 	awscdk.NewCfnOutput(stack, jsii.String("myHttpApiEndpoint"), &awscdk.CfnOutputProps{

@@ -50,7 +50,13 @@ func main() {
 		LambdaSecretsManagerSecurityGroup: network.LambdaSecretsManagerSecurityGroup,
 	})
 
-	stack.NewApiStack(app, "ApiStack", &stack.ApiStackProps{
+	authentication := stack.NewAuthenticationStack(app, "AuthenticationStack", &stack.AuthenticationStackProps{
+		Props: awscdk.StackProps{
+			Env: env(),
+		},
+	})
+
+	api := stack.NewApiStack(app, "ApiStack", &stack.ApiStackProps{
 		Props: awscdk.StackProps{
 			Env: env(),
 		},
@@ -61,7 +67,11 @@ func main() {
 		DbInstance:                        database.DbInstance,
 		ProxyEndpoint:                     database.ProxyEndpoint,
 		LambdaSecurityGroup:               database.LambdaSecurityGroup,
+
+		UserPool: authentication.UserPool,
 	})
+	api.Node().AddDependency(authentication.Stack)
+	api.Node().AddDependency(database.Stack)
 
 	stack.NewBastionStack(app, "BastionStack", &stack.BastionStackProps{
 		StackProps: awscdk.StackProps{
@@ -75,12 +85,6 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println(".env file not found, relying on system env vars")
 	}
-
-	stack.NewAuthenticationStack(app, "AuthenticationStack", &stack.AuthenticationStackProps{
-		Props: awscdk.StackProps{
-			Env: env(),
-		},
-	})
 
 	stubLambda := stack.NewStubLambdaStack(app, "StubLambdaStack", &stack.StubLambdaStackProps{
 		Props: awscdk.StackProps{
