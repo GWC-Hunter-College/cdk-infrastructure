@@ -15,8 +15,7 @@ import (
 )
 
 type ApiStackProps struct {
-	Props        awscdk.StackProps
-	ImagesBucket awss3.IBucket
+	Props awscdk.StackProps
 
 	Vpc                               awsec2.Vpc
 	LambdaSecretsManagerSecurityGroup awsec2.SecurityGroup
@@ -24,7 +23,7 @@ type ApiStackProps struct {
 	ProxyEndpoint                     *string
 	LambdaSecurityGroup               awsec2.SecurityGroup
 
-	EventImageBucket awss3.IBucket
+	ImagesBucket awss3.IBucket
 }
 
 func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) awscdk.Stack {
@@ -53,7 +52,8 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	})
 
 	gateway_routes.TestRoutes(httpApi, stack)
-	gateway_routes.EventRoutes(httpApi, stack, props.EventImageBucket)
+	gateway_routes.ClubRoutes(httpApi, stack, props.ImagesBucket)
+	gateway_routes.EventRoutes(httpApi, stack, props.ImagesBucket)
 	gateway_routes.DatabaseRoutes(httpApi, stack, gateway_routes.DatabaseRouteProps{
 		Vpc:                               props.Vpc,
 		LambdaSecretsManagerSecurityGroup: props.LambdaSecretsManagerSecurityGroup,

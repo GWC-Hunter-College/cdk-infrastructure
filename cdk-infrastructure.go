@@ -43,7 +43,7 @@ func main() {
 		LambdaSecretsManagerSecurityGroup: network.LambdaSecretsManagerSecurityGroup,
 	})
 
-	_, eventImageBucket := stack.NewImageStack(app, "ImageStack", &stack.ImageStackProps{
+	_, imageBucket := stack.NewImageStack(app, "ImageStack", &stack.ImageStackProps{
 		Props: awscdk.StackProps{
 			Description: jsii.String("Stack for all images related to the events system"),
 			Env:         env(),
@@ -61,7 +61,7 @@ func main() {
 		ProxyEndpoint:                     database.ProxyEndpoint,
 		LambdaSecurityGroup:               database.LambdaSecurityGroup,
 
-		EventImageBucket: eventImageBucket,
+		ImagesBucket: imageBucket,
 	})
 
 	stack.NewBastionStack(app, "BastionStack", &stack.BastionStackProps{
