@@ -39,15 +39,5 @@ func NewImageStack(scope constructs.Construct, id string, props *ImageStackProps
 		EnforceSSL:        jsii.Bool(true),
 	})
 
-	// TODO: Add Event Notification to trigger a Lambda to add image details to RDS
-
-	// Needs to be generic for each endpoint that adds images
-	// insertImageInDbLambda := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Insert Images into RDS Function"), &awscdklambdagoalpha.GoFunctionProps{
-	// 	FunctionName: jsii.String("InsertS3ImageDetails"),
-	// 	Entry:        jsii.String("./lambda/images/main.go"),
-	// })
-
-	// imagesBucket.AddEventNotification(awss3.EventType_OBJECT_CREATED, awss3notifications.NewLambdaDestination(insertImageInDbLambda), nil)
-
 	return stack, imagesBucket
 }
