@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -11,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/google/uuid"
 )
 
 var (
@@ -45,7 +47,10 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 		}, nil
 	}
 
-	objectKey := fmt.Sprintf("hunter-event-sys-uploaded-images/events/%s/%s", eventId, body.Filename)
+	imageExtension := filepath.Ext(body.Filename)
+	imageUUID := uuid.NewString()
+
+	objectKey := fmt.Sprintf("hunter-event-sys-uploaded-images/events/%s/%s%s", eventId, imageUUID, imageExtension)
 
 	command := &s3.PutObjectInput{
 		Bucket:      aws.String(bucket),

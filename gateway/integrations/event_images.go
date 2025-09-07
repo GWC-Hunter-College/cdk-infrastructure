@@ -12,7 +12,7 @@ import (
 func EventImagesIntegration(stack awscdk.Stack, bucket awss3.IBucket) awsapigatewayv2integrations.HttpLambdaIntegration {
 	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("EventImagePresignFunction"), &awscdklambdagoalpha.GoFunctionProps{
 		FunctionName: jsii.String("ClubEventImagePresign"),
-		Entry:        jsii.String("lambda/api/clubs/events/images"),
+		Entry:        jsii.String("lambda/api/clubs/events/images/post.go"),
 	})
 
 	bucket.GrantPut(function, "events/*")
