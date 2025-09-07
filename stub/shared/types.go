@@ -57,9 +57,19 @@ type EventOwners struct {
 	Associates []Club `json:"associates"`
 }
 
+type ClubRole string
+
+const (
+	RoleMember ClubRole = "member"
+	RoleEboard ClubRole = "eboard"
+	RoleOwner  ClubRole = "owner"
+)
+
 type Club struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID           int      `json:"id"`
+	Name         string   `json:"name"`
+	Role         ClubRole `json:"role,omitempty"`
+	ThumbnailURL string   `json:"thumbnailUrl,omitempty"`
 }
 
 type Clubs struct {
