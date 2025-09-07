@@ -51,7 +51,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	imageExtension := filepath.Ext(body.Filename)
 	imageUUID := uuid.NewString()
 
-	objectKey := fmt.Sprintf("hunter-event-sys-uploaded-images/events/%s/thumbnails/%s%s", eventId, imageUUID, imageExtension)
+	objectKey := fmt.Sprintf("hunter-event-sys-uploaded-images/events/%s/%s%s", eventId, imageUUID, imageExtension)
 
 	command := &s3.PutObjectInput{
 		Bucket:      aws.String(bucket),
