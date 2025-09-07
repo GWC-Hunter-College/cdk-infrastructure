@@ -9,17 +9,26 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
-// Helper function to add image routes to the HTTP API
+// Helper function to add event routes to the API
 // Routes:
 //
 //	POST /clubs/{clubId}/events/{eventId}/images
-func ImageRoutes(httpApi awsapigatewayv2.HttpApi, stack awscdk.Stack, eventImagesBucket awss3.IBucket) {
+func EventRoutes(httpApi awsapigatewayv2.HttpApi, stack awscdk.Stack, eventImagesBucket awss3.IBucket) {
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path: jsii.String("/clubs/{clubId}/events/{eventId}/images"),
 		Methods: &[]awsapigatewayv2.HttpMethod{
 			awsapigatewayv2.HttpMethod_POST,
-			awsapigatewayv2.HttpMethod_OPTIONS,
+			// awsapigatewayv2.HttpMethod_OPTIONS,
 		},
 		Integration: integrations.EventImagesIntegration(stack, eventImagesBucket),
+	})
+
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path: jsii.String("/clubs/{clubId}/events/{eventId}/thumbnails"),
+		Methods: &[]awsapigatewayv2.HttpMethod{
+			awsapigatewayv2.HttpMethod_POST,
+			awsapigatewayv2.HttpMethod_OPTIONS,
+		},
+		Integration: integrations.EventThumbnailsIntegration(stack, eventImagesBucket),
 	})
 }

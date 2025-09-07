@@ -53,7 +53,7 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	})
 
 	gateway_routes.TestRoutes(httpApi, stack)
-	gateway_routes.ImageRoutes(httpApi, stack, props.EventImageBucket)
+	gateway_routes.EventRoutes(httpApi, stack, props.EventImageBucket)
 	gateway_routes.DatabaseRoutes(httpApi, stack, gateway_routes.DatabaseRouteProps{
 		Vpc:                               props.Vpc,
 		LambdaSecretsManagerSecurityGroup: props.LambdaSecretsManagerSecurityGroup,
