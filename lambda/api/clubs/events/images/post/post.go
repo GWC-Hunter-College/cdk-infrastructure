@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -23,6 +24,14 @@ var (
 func init() {
 	cfg, _ := config.LoadDefaultConfig(context.Background())
 	s3Client = s3.NewFromConfig(cfg)
+
+	bucketVar, ok := os.LookupEnv("S3_BUCKET")
+
+	if !ok {
+		panic("S3_BUCKET environment variable not set")
+	}
+
+	bucket = bucketVar
 }
 
 type S3Response struct {
@@ -51,7 +60,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	imageExtension := filepath.Ext(body.Filename)
 	imageUUID := uuid.NewString()
 
-	objectKey := fmt.Sprintf("hunter-event-sys-uploaded-images/events/%s/%s%s", eventId, imageUUID, imageExtension)
+	objectKey := fmt.Sprintf("events/%s/images/%s%s", eventId, imageUUID, imageExtension)
 
 	command := &s3.PutObjectInput{
 		Bucket:      aws.String(bucket),

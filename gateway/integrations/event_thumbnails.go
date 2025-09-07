@@ -8,11 +8,14 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
-// Integration for event image presign endpoint
+// Integration for event thumbnail presign endpoint
 func EventThumbnailsIntegration(stack awscdk.Stack, bucket awss3.IBucket) awsapigatewayv2integrations.HttpLambdaIntegration {
 	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("EventThumbnailPresignFunction"), &awscdklambdagoalpha.GoFunctionProps{
 		FunctionName: jsii.String("ClubEventThumbnailPresign"),
-		Entry:        jsii.String("lambda/api/clubs/events/thumbnails/post.go"),
+		Entry:        jsii.String("lambda/api/clubs/events/thumbnails/post/post.go"),
+		Environment: &map[string]*string{
+			"S3_BUCKET": bucket.BucketName(),
+		},
 	})
 
 	bucket.GrantPut(function, "events/*/thumbnails/*")
