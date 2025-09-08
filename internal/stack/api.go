@@ -2,10 +2,7 @@ package stack
 
 import (
 	"github.com/aws/aws-cdk-go/awscdk/v2" // core
-	"github.com/aws/aws-cdk-go/awscdk/v2/awscognito"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsrds"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
 
@@ -16,8 +13,6 @@ import (
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-
-	cr "github.com/aws/aws-cdk-go/awscdk/v2/customresources"
 )
 
 type ApiStackProps struct {
@@ -30,8 +25,6 @@ type ApiStackProps struct {
 	DbInstance                        awsrds.DatabaseInstance
 	ProxyEndpoint                     *string
 	LambdaSecurityGroup               awsec2.SecurityGroup
-
-	UserPool awscognito.IUserPool
 }
 
 func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) awscdk.Stack {
@@ -125,181 +118,6 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 		),
 	})
-
-	//  =======================================
-	//  authenticaion lambda
-	//  =======================================
-
-	postConfirmFunction := awslambda.NewDockerImageFunction(stack, jsii.String("PostConfirmUserUpsertFunction"),
-		&awslambda.DockerImageFunctionProps{
-			FunctionName: jsii.String("PostConfirmUserUpsert"),
-			Description:  jsii.String("Lambda function to initialize RDS database"),
-			Code:         awslambda.DockerImageCode_FromImageAsset(jsii.String("lambda/database/init"), nil),
-			Timeout:      awscdk.Duration_Minutes(jsii.Number(1)),
-			MemorySize:   jsii.Number(256),
-			Architecture: awslambda.Architecture_X86_64(),
-			Environment: &map[string]*string{
-				"DB_SECRET_ARN": dbInstance.Secret().SecretArn(),
-				"DB_HOST":       proxyEndpoint,
-			},
-			Vpc: vpc,
-			SecurityGroups: &[]awsec2.ISecurityGroup{
-				lambdaSecretsManagerSecurityGroup,
-				lambdaSecurityGroup,
-			},
-			AllowPublicSubnet: jsii.Bool(true),
-		},
-	)
-
-	// awscdklambdagoalpha.NewGoFunction(stack, jsii.String("PostConfirmUserUpsertFunction"), &awscdklambdagoalpha.GoFunctionProps{
-	// 	Entry:      jsii.String("lambda/database/ini"), // path to folder with main.go
-	// 	MemorySize: jsii.Number(256),
-	// 	Timeout:    awscdk.Duration_Seconds(jsii.Number(10)),
-	// 	Environment: &map[string]*string{
-	// 		"DB_SECRET_ARN": dbInstance.Secret().SecretArn(),
-	// 		"DB_HOST":       proxyEndpoint,
-	// 	},
-	// 	Vpc: vpc,
-	// 	SecurityGroups: &[]awsec2.ISecurityGroup{
-	// 		lambdaSecretsManagerSecurityGroup,
-	// 		lambdaSecurityGroup,
-	// 	},
-	// 	AllowPublicSubnet: jsii.Bool(true),
-	// })
-	dbInstance.Secret().
-		GrantRead(postConfirmFunction, nil)
-
-		// 	// imports: awslambda, awsiam, awscognito
-		// postConfirmFunction.AddPermission(jsii.String("AllowCognitoInvoke"), &awslambda.Permission{
-		// 	Principal: awsiam.NewServicePrincipal(jsii.String("cognito-idp.amazonaws.com"), nil),
-		// 	SourceArn: props.UserPool.UserPoolArn(), // Api → Auth (one-way), OK
-		// })
-
-		// // one physical ID per pool so updates are idempotent
-		// physID := "Wire-" + *props.UserPool.UserPoolId()
-
-		// // Create/Update: attach triggers to the pool
-		// onUp := &cr.AwsSdkCall{
-		// 	Service: jsii.String("CognitoIdentityProvider"),
-		// 	Action:  jsii.String("updateUserPool"),
-		// 	Parameters: &map[string]interface{}{
-		// 		"UserPoolId": *props.UserPool.UserPoolId(),
-		// 		"LambdaConfig": map[string]interface{}{
-		// 			"PostConfirmation":   postConfirmFunction.FunctionArn(),
-		// 			"PostAuthentication": postConfirmFunction.FunctionArn(), // optional; remove if you only want one
-		// 		},
-		// 	},
-		// 	PhysicalResourceId: cr.PhysicalResourceId_Of(jsii.String(physID)),
-		// }
-
-		// // Delete: detach triggers so the pool no longer points at your Lambda
-		// onDel := &cr.AwsSdkCall{
-		// 	Service: jsii.String("CognitoIdentityProvider"),
-		// 	Action:  jsii.String("updateUserPool"),
-		// 	Parameters: &map[string]interface{}{
-		// 		"UserPoolId":   *props.UserPool.UserPoolId(),
-		// 		"LambdaConfig": map[string]interface{}{}, // clears all triggers
-		// 	},
-		// 	PhysicalResourceId:       cr.PhysicalResourceId_Of(jsii.String(physID)),
-		// 	IgnoreErrorCodesMatching: jsii.String(".*ResourceNotFound.*"), // be lenient on teardown
-		// }
-
-		// cr.NewAwsCustomResource(stack, jsii.String("WireCognitoTriggers"), &cr.AwsCustomResourceProps{
-		// 	Policy:              cr.AwsCustomResourcePolicy_FromSdkCalls(&cr.SdkCallsPolicyOptions{Resources: cr.AwsCustomResourcePolicy_ANY_RESOURCE()}),
-		// 	OnCreate:            onUp,
-		// 	OnUpdate:            onUp,
-		// 	OnDelete:            onDel,
-		// 	InstallLatestAwsSdk: jsii.Bool(false),
-		// })
-
-		// allow Cognito to invoke your Lambda
-	postConfirmFunction.AddPermission(jsii.String("AllowCognitoInvoke"), &awslambda.Permission{
-		Principal: awsiam.NewServicePrincipal(jsii.String("cognito-idp.amazonaws.com"), nil),
-		SourceArn: props.UserPool.UserPoolArn(),
-	})
-
-	physID := "Wire-" + *props.UserPool.UserPoolId()
-
-	onUp := &cr.AwsSdkCall{
-		Service: jsii.String("CognitoIdentityServiceProvider"), // <<< v2 name
-		Action:  jsii.String("updateUserPool"),
-		Parameters: &map[string]interface{}{
-			"UserPoolId": *props.UserPool.UserPoolId(),
-			"LambdaConfig": map[string]interface{}{
-				"PostConfirmation": postConfirmFunction.FunctionArn(),
-				// include if you want every login too:
-				"PostAuthentication": postConfirmFunction.FunctionArn(),
-			},
-		},
-		PhysicalResourceId: cr.PhysicalResourceId_Of(jsii.String(physID)),
-	}
-
-	onDel := &cr.AwsSdkCall{
-		Service: jsii.String("CognitoIdentityServiceProvider"), // <<< v2 name
-		Action:  jsii.String("updateUserPool"),
-		Parameters: &map[string]interface{}{
-			"UserPoolId":   *props.UserPool.UserPoolId(),
-			"LambdaConfig": map[string]interface{}{}, // clears triggers
-		},
-		PhysicalResourceId:       cr.PhysicalResourceId_Of(jsii.String(physID)),
-		IgnoreErrorCodesMatching: jsii.String(".*ResourceNotFound.*"),
-	}
-
-	// Scope permissions if you want (instead of ANY_RESOURCE)
-	policy := awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
-		Actions:   &[]*string{jsii.String("cognito-idp:UpdateUserPool")},
-		Resources: &[]*string{props.UserPool.UserPoolArn()},
-	})
-
-	cr.NewAwsCustomResource(stack, jsii.String("WireCognitoTriggers"), &cr.AwsCustomResourceProps{
-		Policy:              cr.AwsCustomResourcePolicy_FromStatements(&[]awsiam.PolicyStatement{policy}),
-		OnCreate:            onUp,
-		OnUpdate:            onUp,
-		OnDelete:            onDel,
-		InstallLatestAwsSdk: jsii.Bool(false), // use SDK v2
-	})
-
-	// postConfirmFunction.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
-	// 	Actions: &[]*string{
-	// 		jsii.String("cognito-idp:AdminGetUser"),
-	// 	},
-	// 	Resources: &[]*string{
-	// 		props.UserPool.UserPoolArn(),
-	// 	},
-	// }))
-
-	// 	// DLQ for EventBridge → Lambda (ignor for now)
-	// dlq := awssqs.NewQueue(c, jsii.String("CognitoEventsDLQ"), &awssqs.QueueProps{
-	// 	RetentionPeriod: awscdk.Duration_Days(jsii.Number(14)),
-	// })
-
-	// rule := awsevents.NewRule(stack, jsii.String("CognitoConfirmEventsRule"), &awsevents.RuleProps{
-	// 	EventPattern: &awsevents.EventPattern{
-	// 		Source:     &[]*string{jsii.String("aws.cognito-idp")},
-	// 		DetailType: &[]*string{jsii.String("AWS API Call via CloudTrail")},
-	// 		Detail: &map[string]interface{}{
-	// 			"eventSource": []string{"cognito-idp.amazonaws.com"},
-	// 			// For first-time creation
-	// 			"eventName": []string{"ConfirmSignUp", "AdminConfirmSignUp"},
-	// 			// Scope to your pool (nested under requestParameters)
-	// 			"requestParameters": map[string]interface{}{
-	// 				"userPoolId": []string{*props.UserPool.UserPoolId()},
-	// 			},
-	// 		},
-	// 	},
-	// })
-
-	// // rule activates function
-	// rule.AddTarget(targets.NewLambdaFunction(postConfirmFunction, &targets.LambdaFunctionProps{
-	// 	RetryAttempts: jsii.Number(2),
-	// }))
-
-	// dont want to deal with dlq rn
-	// // Target the Lambda, with DLQ and small retry budget
-	// 	rule.AddTarget(targets.NewLambdaFunction(userUpsertFn, &targets.LambdaFunctionProps{
-	// 		DeadLetterQueue: dlq,
-	// 		RetryAttempts:   jsii.Number(2),
-	// 	}))
 
 	// log HTTP API endpoint
 	awscdk.NewCfnOutput(stack, jsii.String("myHttpApiEndpoint"), &awscdk.CfnOutputProps{

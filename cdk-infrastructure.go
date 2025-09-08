@@ -59,7 +59,21 @@ func main() {
 		},
 	})
 
-	api := stack.NewApiStack(app, "ApiStack", &stack.ApiStackProps{
+	stack.NewAuthorizationStack(app, "AuthorizationStack", &stack.AuthorizationStackProps{
+		Props: awscdk.StackProps{
+			Env: env(),
+		},
+
+		Vpc:                               database.Vpc,
+		LambdaSecretsManagerSecurityGroup: database.LambdaSecretsManagerSecurityGroup,
+		DbInstance:                        database.DbInstance,
+		ProxyEndpoint:                     database.ProxyEndpoint,
+		LambdaSecurityGroup:               database.LambdaSecurityGroup,
+
+		UserPool: authentication.UserPool,
+	})
+
+	stack.NewApiStack(app, "ApiStack", &stack.ApiStackProps{
 		Props: awscdk.StackProps{
 			Env: env(),
 		},
@@ -70,11 +84,7 @@ func main() {
 		DbInstance:                        database.DbInstance,
 		ProxyEndpoint:                     database.ProxyEndpoint,
 		LambdaSecurityGroup:               database.LambdaSecurityGroup,
-
-		UserPool: authentication.UserPool,
 	})
-	api.Node().AddDependency(authentication.Stack)
-	api.Node().AddDependency(database.Stack)
 
 	stack.NewBastionStack(app, "BastionStack", &stack.BastionStackProps{
 		StackProps: awscdk.StackProps{
