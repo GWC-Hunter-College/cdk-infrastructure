@@ -58,7 +58,7 @@ func main() {
 		Vpc:                               database.Vpc,
 		LambdaSecretsManagerSecurityGroup: database.LambdaSecretsManagerSecurityGroup,
 		DbInstance:                        database.DbInstance,
-		ProxyEndpoint:                     database.ProxyEndpoint,
+		ProxyEndpoint:                     database.Proxy.Endpoint(),
 		LambdaSecurityGroup:               database.LambdaSecurityGroup,
 
 		ImagesBucket: imageBucket,
@@ -81,6 +81,19 @@ func main() {
 		Props: awscdk.StackProps{
 			Env: env(),
 		},
+	})
+
+	stack.NewDatabaseInitStack(app, "DatabaseInitStack", &stack.Props{
+		StackProps: awscdk.StackProps{
+			Env: env(),
+		},
+
+		Vpc:                               database.Vpc,
+		DbInstance:                        database.DbInstance,
+		LambdaSecretsManagerSecurityGroup: database.LambdaSecretsManagerSecurityGroup,
+		LambdaSecurityGroup:               database.LambdaSecurityGroup,
+		Proxy:                             database.Proxy,
+		ProxySecurityGroup:                database.ProxySecurityGroup,
 	})
 
 	app.Synth(nil)
