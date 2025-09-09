@@ -29,10 +29,10 @@ import (
 	3. curl "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{}'
 */
 
-var databaseNames = []string{"STAGING"}
+var databaseNames = []string{"STAGING", "PRODUCTION"}
 
 var initTableMigrationFiles = []string{
-	"07_11_2025_create_core_tables_up.sql",
+	"09_08_2025_create_core_tables_up.sql",
 	"07_11_2025_create_member_form_migration_table_up.sql",
 }
 
