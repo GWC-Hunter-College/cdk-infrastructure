@@ -25,6 +25,8 @@ type ApiStackProps struct {
 	DbInstance                        awsrds.DatabaseInstance
 	ProxyEndpoint                     *string
 	LambdaSecurityGroup               awsec2.SecurityGroup
+
+	Authorizer awsapigatewayv2.IHttpRouteAuthorizer
 }
 
 func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) awscdk.Stack {
@@ -41,6 +43,14 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	// create HTTP API
 	httpApi := awsapigatewayv2.NewHttpApi(stack, jsii.String("ClubEventApi"), &awsapigatewayv2.HttpApiProps{
 		ApiName: jsii.String("ClubEventApi"),
+		CorsPreflight: &awsapigatewayv2.CorsPreflightOptions{
+			AllowOrigins: jsii.Strings("*"), // tighten in prod
+			AllowHeaders: jsii.Strings("authorization", "content-type"),
+			AllowMethods: &[]awsapigatewayv2.CorsHttpMethod{
+				awsapigatewayv2.CorsHttpMethod_GET,
+				awsapigatewayv2.CorsHttpMethod_OPTIONS,
+			},
+		},
 	})
 
 	//  =======================================
@@ -118,6 +128,33 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 		),
 	})
+
+	// ====================
+	// auth
+	// ====================
+
+	meFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Me Function"), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("MeFunction"),
+		Entry:        jsii.String("./lambda/auth/stub/main.go"),
+	})
+
+	// add route to HTTP API
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path:    jsii.String("/me"),
+		Methods: &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
+		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(
+			jsii.String("MeIntegration"),
+			meFunction,
+			&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
+		),
+		Authorizer: props.Authorizer,
+	})
+	// httpApi.AddRoutes(&apigwv2alpha.AddRoutesOptions{
+	// 	Path:        jsii.String("/me"),
+	// 	Methods:     &[]apigwv2alpha.HttpMethod{apigwv2alpha.HttpMethod_GET},
+	// 	Integration: meIntegration,
+	// 	Authorizer:  props.Authorizer, // now matches type
+	// })
 
 	// log HTTP API endpoint
 	awscdk.NewCfnOutput(stack, jsii.String("myHttpApiEndpoint"), &awscdk.CfnOutputProps{

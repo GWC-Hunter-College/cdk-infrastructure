@@ -15,8 +15,9 @@ type AuthenticationStackProps struct {
 }
 
 type AuthenticationStack struct {
-	Stack    awscdk.Stack
-	UserPool awscognito.IUserPool
+	Stack     awscdk.Stack
+	UserPool  awscognito.IUserPool
+	AppClient awscognito.IUserPoolClient
 }
 
 // .env read helpers
@@ -167,7 +168,8 @@ func NewAuthenticationStack(scope constructs.Construct, id string, props *Authen
 	// })
 
 	return &AuthenticationStack{
-		Stack:    stack,
-		UserPool: userPool,
+		Stack:     stack,
+		UserPool:  userPool,
+		AppClient: webClient,
 	}
 }

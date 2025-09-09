@@ -1,6 +1,9 @@
 package stack
 
 import (
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2authorizers"
+
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awscognito"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
@@ -22,11 +25,13 @@ type AuthorizationStackProps struct {
 	ProxyEndpoint                     *string
 	LambdaSecurityGroup               awsec2.SecurityGroup
 
-	UserPool awscognito.IUserPool
+	UserPool  awscognito.IUserPool
+	AppClient awscognito.IUserPoolClient
 }
 
 type AuthorizationStack struct {
-	Stack awscdk.Stack
+	Stack      awscdk.Stack
+	Authorizer awsapigatewayv2.IHttpRouteAuthorizer
 }
 
 func NewAuthorizationStack(scope constructs.Construct, id string, props *AuthorizationStackProps) *AuthorizationStack {
@@ -121,7 +126,32 @@ func NewAuthorizationStack(scope constructs.Construct, id string, props *Authori
 		InstallLatestAwsSdk: jsii.Bool(false), // use SDK v2
 	})
 
+	// authorizer
+	// authorizer := apigwauth.NewHttpUserPoolAuthorizer(
+	// 	jsii.String("CognitoAuth"),
+	// 	props.UserPool,
+	// 	&apigwauth.HttpUserPoolAuthorizerProps{
+	// 		UserPoolClients: &[]awscognito.IUserPoolClient{props.AppClient},
+	// 	},
+	// )
+
+	// authMeFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("Auth Me Function"), &awscdklambdagoalpha.GoFunctionProps{
+	// 	FunctionName: jsii.String("AuthMeFunction"),
+	// 	Entry:        jsii.String("./lambda/auth/me/main.go"),
+	// })
+
+	authorizer := awsapigatewayv2authorizers.NewHttpUserPoolAuthorizer(
+		jsii.String("CognitoJwt"),
+		props.UserPool,
+		&awsapigatewayv2authorizers.HttpUserPoolAuthorizerProps{
+			UserPoolClients: &[]awscognito.IUserPoolClient{props.AppClient},
+			// Optional: AuthorizerName: jsii.String("CognitoJwtAuthorizer"),
+			// Optional: ResultsCacheTtl: awscdk.Duration_Seconds(jsii.Number(0)), // while developing
+		},
+	)
+
 	return &AuthorizationStack{
-		Stack: stack,
+		Stack:      stack,
+		Authorizer: authorizer,
 	}
 }

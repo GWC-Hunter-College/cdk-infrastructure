@@ -6,6 +6,7 @@ toolchain go1.24.3
 
 require (
 	github.com/aws/aws-cdk-go/awscdk/v2 v2.208.0
+	github.com/aws/aws-cdk-go/awscdkapigatewayv2authorizersalpha/v2 v2.114.1-alpha.0
 	github.com/aws/aws-cdk-go/awscdklambdagoalpha/v2 v2.208.0-alpha.0
 	github.com/aws/aws-lambda-go v1.49.0
 	github.com/aws/aws-sdk-go-v2 v1.38.3
@@ -22,6 +23,7 @@ require (
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Masterminds/semver/v3 v3.3.1 // indirect
+	github.com/aws/aws-cdk-go/awscdkapigatewayv2alpha/v2 v2.114.1-alpha.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.11 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.70 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.32 // indirect
