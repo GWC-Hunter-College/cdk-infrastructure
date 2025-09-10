@@ -3,6 +3,7 @@ package stack
 import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2authorizers"
+	"github.com/aws/aws-cdk-go/awscdklambdagoalpha/v2"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awscognito"
@@ -44,42 +45,47 @@ func NewAuthorizationStack(scope constructs.Construct, id string, props *Authori
 	//  =======================================
 	//  read props
 	//  =======================================
-	vpc := props.Vpc
-	dbInstance := props.DbInstance
-	proxyEndpoint := props.ProxyEndpoint
+	// vpc := props.Vpc
+	// dbInstance := props.DbInstance
+	// proxyEndpoint := props.ProxyEndpoint
 
-	lambdaSecretsManagerSecurityGroup := props.LambdaSecretsManagerSecurityGroup
-	lambdaSecurityGroup := props.LambdaSecurityGroup
+	// lambdaSecretsManagerSecurityGroup := props.LambdaSecretsManagerSecurityGroup
+	// lambdaSecurityGroup := props.LambdaSecurityGroup
 
 	//  =======================================
 	//  authenticaion lambda
 	//  =======================================
 
-	postConfirmFunction := awslambda.NewDockerImageFunction(stack, jsii.String("PostConfirmUserUpsertFunction"),
-		&awslambda.DockerImageFunctionProps{
-			FunctionName: jsii.String("PostConfirmUserUpsert"),
-			Description:  jsii.String("Lambda function to initialize RDS database"),
-			Code:         awslambda.DockerImageCode_FromImageAsset(jsii.String("lambda/database/init"), nil),
-			Timeout:      awscdk.Duration_Minutes(jsii.Number(1)),
-			MemorySize:   jsii.Number(256),
-			Architecture: awslambda.Architecture_X86_64(),
-			Environment: &map[string]*string{
-				"DB_SECRET_ARN": dbInstance.Secret().SecretArn(),
-				"DB_HOST":       proxyEndpoint,
-			},
-			Vpc: vpc,
-			SecurityGroups: &[]awsec2.ISecurityGroup{
-				lambdaSecretsManagerSecurityGroup,
-				lambdaSecurityGroup,
-			},
-			AllowPublicSubnet: jsii.Bool(true),
-		},
-	)
+	// postConfirmFunction := awslambda.NewDockerImageFunction(stack, jsii.String("PostConfirmUserUpsertFunction"),
+	// 	&awslambda.DockerImageFunctionProps{
+	// 		FunctionName: jsii.String("PostConfirmUserUpsert"),
+	// 		Description:  jsii.String("Lambda function to initialize RDS database"),
+	// 		Code:         awslambda.DockerImageCode_FromImageAsset(jsii.String("lambda/database/init"), nil),
+	// 		Timeout:      awscdk.Duration_Minutes(jsii.Number(1)),
+	// 		MemorySize:   jsii.Number(256),
+	// 		Architecture: awslambda.Architecture_X86_64(),
+	// 		Environment: &map[string]*string{
+	// 			"DB_SECRET_ARN": dbInstance.Secret().SecretArn(),
+	// 			"DB_HOST":       proxyEndpoint,
+	// 		},
+	// 		Vpc: vpc,
+	// 		SecurityGroups: &[]awsec2.ISecurityGroup{
+	// 			lambdaSecretsManagerSecurityGroup,
+	// 			lambdaSecurityGroup,
+	// 		},
+	// 		AllowPublicSubnet: jsii.Bool(true),
+	// 	},
+	// )
 
-	dbInstance.Secret().
-		GrantRead(postConfirmFunction, nil)
+	postConfirmFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("PostConfirmUserUpsertFunction"), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("PostConfirmUserUpsert"),
+		Entry:        jsii.String("./lambda/internal/postConfirm/main.go"),
+	})
 
-		// allow Cognito to invoke your Lambda
+	// dbInstance.Secret().
+	// 	GrantRead(postConfirmFunction, nil)
+
+	// allow Cognito to invoke your Lambda
 	postConfirmFunction.AddPermission(jsii.String("AllowCognitoInvoke"), &awslambda.Permission{
 		Principal: awsiam.NewServicePrincipal(jsii.String("cognito-idp.amazonaws.com"), nil),
 		SourceArn: props.UserPool.UserPoolArn(),

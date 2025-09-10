@@ -74,7 +74,7 @@ func main() {
 		AppClient: authentication.AppClient,
 	})
 
-	stack.NewApiStack(app, "ApiStack", &stack.ApiStackProps{
+	api := stack.NewApiStack(app, "ApiStack", &stack.ApiStackProps{
 		Props: awscdk.StackProps{
 			Env: env(),
 		},
@@ -88,6 +88,8 @@ func main() {
 
 		Authorizer: authorization.Authorizer,
 	})
+	api.Node().AddDependency(authorization.Stack)
+	api.Node().AddDependency(database.Stack)
 
 	stack.NewBastionStack(app, "BastionStack", &stack.BastionStackProps{
 		StackProps: awscdk.StackProps{
