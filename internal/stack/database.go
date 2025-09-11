@@ -108,56 +108,6 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 
 	lambdaSecretsManagerSecurityGroup := props.LambdaSecretsManagerSecurityGroup
 
-	// initRDSFunc := awslambda.NewDockerImageFunction(stack, jsii.String("RDS Init Function"),
-	// 	&awslambda.DockerImageFunctionProps{
-	// 		FunctionName: jsii.String("InitRDS"),
-	// 		Description:  jsii.String("Lambda function to initialize RDS database"),
-	// 		Code:         awslambda.DockerImageCode_FromImageAsset(jsii.String("lambda/database/init"), nil),
-	// 		Timeout:      awscdk.Duration_Minutes(jsii.Number(1)),
-	// 		MemorySize:   jsii.Number(256),
-	// 		Architecture: awslambda.Architecture_X86_64(),
-	// 		Environment: &map[string]*string{
-	// 			"DB_SECRET_ARN": dbInstance.Secret().SecretArn(),
-	// 			"DB_HOST":       proxy.Endpoint(),
-	// 		},
-	// 		Vpc: vpc,
-	// 		SecurityGroups: &[]awsec2.ISecurityGroup{
-	// 			lambdaSecretsManagerSecurityGroup,
-	// 			lambdaSecurityGroup,
-	// 		},
-	// 		AllowPublicSubnet: jsii.Bool(true),
-	// 	},
-	// )
-
-	// dbInstance.Secret().GrantRead(initRDSFunc, nil)
-	// dbInstance.GrantConnect(initRDSFunc, nil)
-
-	// // Create a custom resource provider to invoke the RDS initialization function on deployment
-	// provider := customresources.NewProvider(stack, jsii.String("RdsInitProvider"), &customresources.ProviderProps{
-	// 	OnEventHandler: initRDSFunc,
-	// })
-
-	// rdsInitializer := awscdk.NewCustomResource(stack, jsii.String("RdsInitializer"), &awscdk.CustomResourceProps{
-	// 	ServiceToken: provider.ServiceToken(),
-	// })
-
-	// // Ensure the database is ready before the Lambda runs
-	// rdsInitializer.Node().AddDependency(dbInstance)
-
-	// ensure the proxy, security group and it's ingress rules are ready before lambda runs
-
-	// 1️⃣ Create an explicit ingress rule so the Lambda SG can reach the Proxy SG
-	// initToProxyIngress := awsec2.NewCfnSecurityGroupIngress(stack,
-	// 	jsii.String("InitToProxyIngress"), // logical ID
-	// 	&awsec2.CfnSecurityGroupIngressProps{
-	// 		GroupId:               proxySecurityGroup.SecurityGroupId(),  // destination SG
-	// 		SourceSecurityGroupId: lambdaSecurityGroup.SecurityGroupId(), // source SG
-	// 		IpProtocol:            jsii.String("tcp"),
-	// 		FromPort:              jsii.Number(3306),
-	// 		ToPort:                jsii.Number(3306),
-	// 	},
-	// )
-
 	// Grab the default target-group that CDK created for the proxy
 	// ngl ion understand what a target group is
 	var tg awsrds.CfnDBProxyTargetGroup
@@ -172,11 +122,6 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 	if tg == nil {
 		panic("no CfnDBProxyTargetGroup found under the proxy")
 	}
-
-	// require the depencies before running lambda
-	// rdsInitializer.Node().AddDependency(proxy)              // proxy ENIs/listener ready
-	// rdsInitializer.Node().AddDependency(tg)                 // instance registered
-	// rdsInitializer.Node().AddDependency(initToProxyIngress) // ingress rule applied
 
 	return &DatabaseStack{
 		Stack: stack,
