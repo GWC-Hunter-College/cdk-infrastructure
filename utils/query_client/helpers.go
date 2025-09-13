@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
@@ -51,6 +52,8 @@ func loadSQLFromFile(filepath string) (string, error) {
 	defer file.Close()
 
 	if err != nil {
+		log.Printf("Error opening SQL file: %v", err)
+
 		return "", err
 	}
 
