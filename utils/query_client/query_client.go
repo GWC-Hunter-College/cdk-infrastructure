@@ -155,6 +155,20 @@ func (qc *QueryClient) ExecuteQuery(filepath string, args ...any) (*sql.Rows, er
 	return rows, nil
 }
 
+// Execute a query from a file located at `filepath` that is expected to return a single row.
+func (qc *QueryClient) ExecuteQueryRow(filepath string, args ...any) *sql.Row {
+	query, err := loadSQLFromFile(filepath)
+	if err != nil {
+		return nil
+	}
+
+	row := qc.Conn.QueryRow(query, args...)
+
+	log.Printf("Successfully executed query from file: %s.", filepath)
+
+	return row
+}
+
 // Execute multiple queries in sequence, each from their own file with optional args for placeholders.
 // If any query fails, the execution stops and the error is returned.
 //
