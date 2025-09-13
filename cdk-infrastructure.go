@@ -39,11 +39,10 @@ func main() {
 		Props: awscdk.StackProps{
 			Env: env(),
 		},
-		Vpc:                               network.Vpc,
-		LambdaSecretsManagerSecurityGroup: network.LambdaSecretsManagerSecurityGroup,
+		Vpc: network.Vpc,
 	})
 
-	_, imageBucket := stack.NewImageStack(app, "ImageStack", &stack.ImageStackProps{
+	image := stack.NewImageStack(app, "ImageStack", &stack.ImageStackProps{
 		Props: awscdk.StackProps{
 			Description: jsii.String("Stack for all images related to the events system"),
 			Env:         env(),
@@ -55,13 +54,13 @@ func main() {
 			Env: env(),
 		},
 
-		Vpc:                               database.Vpc,
-		LambdaSecretsManagerSecurityGroup: database.LambdaSecretsManagerSecurityGroup,
-		DbInstance:                        database.DbInstance,
-		ProxyEndpoint:                     database.Proxy.Endpoint(),
+		LambdaSecretsManagerSecurityGroup: network.LambdaSecretsManagerSecurityGroup,
+		Vpc:                               network.Vpc,
 		LambdaSecurityGroup:               database.LambdaSecurityGroup,
+		DbInstance:                        database.DbInstance,
+		DbProxy:                           database.Proxy,
 
-		ImagesBucket: imageBucket,
+		ImagesBucket: image.Bucket,
 	})
 
 	stack.NewBastionStack(app, "BastionStack", &stack.BastionStackProps{
@@ -69,7 +68,7 @@ func main() {
 			Env: env(),
 		},
 
-		Vpc:             database.Vpc,
+		Vpc:             network.Vpc,
 		DbSecurityGroup: database.DbSecurityGroup,
 	})
 
@@ -88,12 +87,12 @@ func main() {
 			Env: env(),
 		},
 
-		Vpc:                               database.Vpc,
-		DbInstance:                        database.DbInstance,
-		LambdaSecretsManagerSecurityGroup: database.LambdaSecretsManagerSecurityGroup,
+		Vpc:                               network.Vpc,
+		LambdaSecretsManagerSecurityGroup: network.LambdaSecretsManagerSecurityGroup,
 		LambdaSecurityGroup:               database.LambdaSecurityGroup,
-		Proxy:                             database.Proxy,
 		ProxySecurityGroup:                database.ProxySecurityGroup,
+		DbInstance:                        database.DbInstance,
+		Proxy:                             database.Proxy,
 	})
 
 	app.Synth(nil)

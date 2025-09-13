@@ -1,6 +1,7 @@
 package stack
 
 import (
+	gateway_parameters "cdk-infrastructure/gateway/parameters"
 	gateway_routes "cdk-infrastructure/gateway/routes"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2" // core
@@ -19,11 +20,12 @@ type ApiStackProps struct {
 
 	Vpc                               awsec2.Vpc
 	LambdaSecretsManagerSecurityGroup awsec2.SecurityGroup
-	DbInstance                        awsrds.DatabaseInstance
-	ProxyEndpoint                     *string
 	LambdaSecurityGroup               awsec2.SecurityGroup
+	ProxySecurityGroup                awsec2.SecurityGroup
+	DbInstance                        awsrds.DatabaseInstance
+	DbProxy                           awsrds.DatabaseProxy
 
-	ImagesBucket awss3.IBucket
+	ImagesBucket awss3.Bucket
 }
 
 func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) awscdk.Stack {
@@ -51,16 +53,32 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		},
 	})
 
+	vpc := props.Vpc
+
+	s3Params := gateway_parameters.S3PermissionsParameters{
+		Bucket: props.ImagesBucket,
+	}
+
+	dbParams := gateway_parameters.DatabaseConnectionParameters{
+		Secret:                   props.DbInstance.Secret(),
+		LambdaToProxySG:          props.LambdaSecurityGroup,
+		LambdaToSecretsManagerSG: props.LambdaSecretsManagerSecurityGroup,
+		DbInstance:               props.DbInstance,
+		DbHost:                   *props.DbProxy.Endpoint(),
+		DbName:                   "PRODUCTION",
+	}
+
 	gateway_routes.TestRoutes(httpApi, stack)
-	gateway_routes.ClubRoutes(httpApi, stack, props.ImagesBucket)
-	gateway_routes.EventRoutes(httpApi, stack, props.ImagesBucket)
-	gateway_routes.DatabaseRoutes(httpApi, stack, gateway_routes.DatabaseRouteProps{
-		Vpc:                               props.Vpc,
-		LambdaSecretsManagerSecurityGroup: props.LambdaSecretsManagerSecurityGroup,
-		DbInstance:                        props.DbInstance,
-		ProxyEndpoint:                     props.ProxyEndpoint,
-		LambdaSecurityGroup:               props.LambdaSecurityGroup,
-	})
+	gateway_routes.ClubRoutes(httpApi, stack, vpc, s3Params, dbParams)
+	gateway_routes.EventRoutes(httpApi, stack, vpc, s3Params, dbParams)
+
+	// gateway_routes.DatabaseRoutes(httpApi, stack, gateway_routes.DatabaseRouteProps{
+	// 	Vpc:                               props.Vpc,
+	// 	LambdaSecretsManagerSecurityGroup: props.LambdaSecretsManagerSecurityGroup,
+	// 	DbInstance:                        props.DbInstance,
+	// 	ProxyEndpoint:                     props.ProxyEndpoint,
+	// 	LambdaSecurityGroup:               props.LambdaSecurityGroup,
+	// })
 
 	// log HTTP API endpoint
 	awscdk.NewCfnOutput(stack, jsii.String("myHttpApiEndpoint"), &awscdk.CfnOutputProps{

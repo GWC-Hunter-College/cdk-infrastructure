@@ -5,29 +5,26 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsrds"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awssecretsmanager"
+	"github.com/aws/jsii-runtime-go"
 
 	"github.com/aws/constructs-go/constructs/v10"
-	"github.com/aws/jsii-runtime-go"
 )
 
 type DatabaseStackProps struct {
 	Props awscdk.StackProps
 
-	Vpc                               awsec2.Vpc
-	LambdaSecretsManagerSecurityGroup awsec2.SecurityGroup
+	Vpc awsec2.Vpc
 }
 
 type DatabaseStack struct {
 	Stack awscdk.Stack
 
-	Vpc                               awsec2.Vpc
-	LambdaSecretsManagerSecurityGroup awsec2.SecurityGroup
+	DbInstance awsrds.DatabaseInstance
+	Proxy      awsrds.DatabaseProxy
 
-	DbInstance          awsrds.DatabaseInstance
 	DbSecurityGroup     awsec2.SecurityGroup
 	LambdaSecurityGroup awsec2.SecurityGroup
 	ProxySecurityGroup  awsec2.SecurityGroup
-	Proxy               awsrds.DatabaseProxy
 }
 
 func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStackProps) *DatabaseStack {
@@ -37,12 +34,8 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
-	// ====================================
-	// infrasctructure security groups and rules
-	// ====================================
 	vpc := props.Vpc
 
-	// labda to rds security groups
 	proxySecurityGroup := createSecurityGroup(stack, vpc, "proxy")
 	lambdaSecurityGroup := createSecurityGroup(stack, vpc, "lambda")
 	dbSecurityGroup := createSecurityGroup(stack, vpc, "rds-db")
@@ -73,10 +66,6 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 		jsii.Bool(false),
 	)
 
-	// ====================================
-	// db instance and proxy inilitialization
-	// ====================================
-
 	dbInstance := awsrds.NewDatabaseInstance(stack, jsii.String("ClubEventDb"), &awsrds.DatabaseInstanceProps{
 		Engine: awsrds.DatabaseInstanceEngine_Mysql(&awsrds.MySqlInstanceEngineProps{
 			Version: awsrds.MysqlEngineVersion_VER_8_0_37(),
@@ -86,7 +75,6 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 		VpcSubnets: &awsec2.SubnetSelection{
 			SubnetType: awsec2.SubnetType_PRIVATE_ISOLATED,
 		},
-		PubliclyAccessible:  jsii.Bool(false),
 		SecurityGroups:      &[]awsec2.ISecurityGroup{dbSecurityGroup},
 		Credentials:         awsrds.Credentials_FromGeneratedSecret(jsii.String("dbadmin"), nil),
 		AllocatedStorage:    jsii.Number(20),
@@ -106,34 +94,14 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 		IdleClientTimeout: awscdk.Duration_Minutes(jsii.Number(30)),
 	})
 
-	lambdaSecretsManagerSecurityGroup := props.LambdaSecretsManagerSecurityGroup
-
-	// Grab the default target-group that CDK created for the proxy
-	// ngl ion understand what a target group is
-	var tg awsrds.CfnDBProxyTargetGroup
-
-	for _, child := range *proxy.Node().Children() { // note the *
-		if v, ok := child.(awsrds.CfnDBProxyTargetGroup); ok {
-			tg = v
-			break
-		}
-	}
-
-	if tg == nil {
-		panic("no CfnDBProxyTargetGroup found under the proxy")
-	}
-
 	return &DatabaseStack{
 		Stack: stack,
 
-		Vpc:                               vpc,
-		LambdaSecretsManagerSecurityGroup: lambdaSecretsManagerSecurityGroup,
+		DbInstance: dbInstance,
+		Proxy:      proxy,
 
-		DbInstance:          dbInstance,
 		DbSecurityGroup:     dbSecurityGroup,
 		LambdaSecurityGroup: lambdaSecurityGroup,
 		ProxySecurityGroup:  proxySecurityGroup,
-
-		Proxy: proxy,
 	}
 }

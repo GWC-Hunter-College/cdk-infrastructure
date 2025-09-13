@@ -11,7 +11,12 @@ type ImageStackProps struct {
 	Props awscdk.StackProps
 }
 
-func NewImageStack(scope constructs.Construct, id string, props *ImageStackProps) (awscdk.Stack, awss3.IBucket) {
+type ImageStack struct {
+	Stack  awscdk.Stack
+	Bucket awss3.Bucket
+}
+
+func NewImageStack(scope constructs.Construct, id string, props *ImageStackProps) *ImageStack {
 	var sprops awscdk.StackProps
 	if props != nil {
 		sprops = props.Props
@@ -39,5 +44,8 @@ func NewImageStack(scope constructs.Construct, id string, props *ImageStackProps
 		EnforceSSL:        jsii.Bool(true),
 	})
 
-	return stack, imagesBucket
+	return &ImageStack{
+		Stack:  stack,
+		Bucket: imagesBucket,
+	}
 }
