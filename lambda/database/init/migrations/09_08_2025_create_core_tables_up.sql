@@ -1,5 +1,3 @@
-USE STAGING;
-
 CREATE TABLE IF NOT EXISTS `students` (
   `id` CHAR(36) PRIMARY KEY,
   `email` VARCHAR(255)
