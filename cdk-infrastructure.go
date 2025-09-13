@@ -17,6 +17,10 @@ func main() {
 
 	app := awscdk.NewApp(nil)
 
+	if err := godotenv.Load(); err != nil {
+		log.Println(".env file not found, relying on system env vars")
+	}
+
 	stack.NewFrontendStack(app, "FrontendStack", &stack.FrontendStackProps{
 		Props: awscdk.StackProps{
 			Env: env(),
@@ -71,10 +75,6 @@ func main() {
 		Vpc:             network.Vpc,
 		DbSecurityGroup: database.DbSecurityGroup,
 	})
-
-	if err := godotenv.Load(); err != nil {
-		log.Println(".env file not found, relying on system env vars")
-	}
 
 	stack.NewAuthenticationStack(app, "AuthenticationStack", &stack.AuthenticationStackProps{
 		Props: awscdk.StackProps{

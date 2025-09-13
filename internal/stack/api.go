@@ -3,6 +3,8 @@ package stack
 import (
 	gateway_parameters "cdk-infrastructure/gateway/parameters"
 	gateway_routes "cdk-infrastructure/gateway/routes"
+	"os"
+	"strings"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2" // core
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
@@ -53,6 +55,21 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		},
 	})
 
+	var databaseName string
+	productionStatus := strings.ToLower(os.Getenv("DEPLOYMENT_STATUS"))
+
+	if productionStatus == "production" ||
+		productionStatus == "prod" {
+		databaseName = "PRODUCTION"
+	} else {
+		databaseName = "STAGING"
+	}
+
+	awscdk.NewCfnOutput(stack, jsii.String("DeploymentStatus"), &awscdk.CfnOutputProps{
+		Value:       jsii.String(databaseName),
+		Description: jsii.String("The deployment status, either 'production' or 'staging'"),
+	})
+
 	vpc := props.Vpc
 
 	s3Params := gateway_parameters.S3PermissionsParameters{
@@ -65,7 +82,7 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		LambdaToSecretsManagerSG: props.LambdaSecretsManagerSecurityGroup,
 		DbInstance:               props.DbInstance,
 		DbHost:                   *props.DbProxy.Endpoint(),
-		DbName:                   "PRODUCTION",
+		DbName:                   databaseName,
 	}
 
 	gateway_routes.TestRoutes(httpApi, stack)
