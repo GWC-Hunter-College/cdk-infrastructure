@@ -1,0 +1,111 @@
+package main
+
+import (
+	"cdk-infrastructure/utils/query_client"
+	"context"
+	"encoding/json"
+	"log"
+	"os"
+
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+)
+
+var (
+	queryClient *query_client.QueryClient
+)
+
+func init() {
+	secretArn := os.Getenv("DB_SECRET_ARN")
+	host := os.Getenv("DB_HOST")
+	database := os.Getenv("DB_NAME")
+
+	query_client, err := query_client.NewClientFromHost(context.Background(), secretArn, database, host)
+	if err != nil {
+		panic("Could not create query client: " + err.Error())
+	}
+
+	queryClient = query_client
+}
+
+type ResponseJSONSchema struct {
+	Message string `json:"message"`
+}
+
+type RequestBodySchema struct {
+	ImageID   string `json:"imageId"`
+	ObjectKey string `json:"objectKey"`
+	Filename  string `json:"filename"`
+	Mimetype  string `json:"mimetype"`
+}
+
+func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	defer queryClient.Close()
+
+	eventId := request.PathParameters["eventId"]
+
+	var body RequestBodySchema
+	err := json.Unmarshal([]byte(request.Body), &body)
+
+	if err != nil || body.ImageID == "" || body.ObjectKey == "" || body.Filename == "" || body.Mimetype == "" {
+		return events.APIGatewayProxyResponse{
+			Body:       string(`message: "Missing imageId, objectKey, filename, or mimetype in request body"`),
+			StatusCode: 400,
+		}, nil
+	}
+
+	insertImageQuery := query_client.NewQuery("images/INSERT_image.sql",
+		body.ImageID, "event-image", body.ObjectKey, body.Filename, body.Mimetype,
+	)
+
+	imageRow := queryClient.ExecuteQueryRow(insertImageQuery.Filepath, insertImageQuery.Args...)
+
+	if err := imageRow.Err(); err != nil {
+
+		log.Printf("Error inserting image: %v", imageRow.Err())
+
+		return events.APIGatewayProxyResponse{
+			Body:       string(`message: "Database error: ` + err.Error() + `"`),
+			StatusCode: 500,
+		}, nil
+	}
+
+	insertEventImageQuery := query_client.NewQuery("images/INSERT_event_image.sql",
+		eventId, body.ImageID,
+	)
+
+	eventImageRow := queryClient.ExecuteQueryRow(insertEventImageQuery.Filepath, insertEventImageQuery.Args...)
+
+	if err := eventImageRow.Err(); err != nil {
+
+		log.Printf("Error inserting event image: %v", err)
+
+		return events.APIGatewayProxyResponse{
+			Body:       string(`message: "Database error: ` + err.Error() + `"`),
+			StatusCode: 500,
+		}, nil
+	}
+
+	response := ResponseJSONSchema{
+		Message: "Image confirmed successfully",
+	}
+
+	responseJson, err := json.Marshal(response)
+	if err != nil {
+		log.Printf("Error marshalling response: %v", err)
+
+		return events.APIGatewayProxyResponse{
+			Body:       string(`message: "Internal JSON marshalling error"` + err.Error()),
+			StatusCode: 500,
+		}, nil
+	}
+
+	return events.APIGatewayProxyResponse{
+		Body:       string(responseJson),
+		StatusCode: 200,
+	}, nil
+}
+
+func main() {
+	lambda.Start(handleRequest)
+}
