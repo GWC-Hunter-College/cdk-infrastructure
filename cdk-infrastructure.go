@@ -5,18 +5,21 @@ import (
 	"os"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2" // core
+	"github.com/joho/godotenv"
 
 	"github.com/aws/jsii-runtime-go"
 
 	stack "cdk-infrastructure/internal/stack"
-
-	"github.com/joho/godotenv"
 )
 
 func main() {
 	defer jsii.Close()
 
 	app := awscdk.NewApp(nil)
+
+	if err := godotenv.Load(); err != nil {
+		log.Println(".env file not found, relying on system env vars")
+	}
 
 	stack.NewFrontendStack(app, "FrontendStack", &stack.FrontendStackProps{
 		Props: awscdk.StackProps{
@@ -25,12 +28,6 @@ func main() {
 	})
 
 	stack.NewFrontendHccStack(app, "FrontendHccStack", &stack.FrontendHccStackProps{
-		Props: awscdk.StackProps{
-			Env: env(),
-		},
-	})
-
-	images := stack.NewStorageStack(app, "StorageStack", &stack.StorageStackProps{
 		Props: awscdk.StackProps{
 			Env: env(),
 		},
@@ -46,21 +43,52 @@ func main() {
 		Props: awscdk.StackProps{
 			Env: env(),
 		},
+		Vpc: network.Vpc,
+	})
+
+	image := stack.NewImageStack(app, "ImageStack", &stack.ImageStackProps{
+		Props: awscdk.StackProps{
+			Description: jsii.String("Stack for all images related to the events system"),
+			Env:         env(),
+		},
+	})
+
+	authentication := stack.NewAuthenticationStack(app, "AuthenticationStack", &stack.AuthenticationStackProps{
+		Props: awscdk.StackProps{
+			Env: env(),
+		},
+	})
+
+	authorization := stack.NewAuthorizationStack(app, "AuthorizationStack", &stack.AuthorizationStackProps{
+		Props: awscdk.StackProps{
+			Env: env(),
+		},
+
 		Vpc:                               network.Vpc,
 		LambdaSecretsManagerSecurityGroup: network.LambdaSecretsManagerSecurityGroup,
+		DbInstance:                        database.DbInstance,
+		LambdaSecurityGroup:               database.LambdaSecurityGroup,
+		ProxyEndpoint:                     database.Proxy.Endpoint(),
+
+		UserPool:  authentication.UserPool,
+		AppClient: authentication.AppClient,
 	})
 
 	stack.NewApiStack(app, "ApiStack", &stack.ApiStackProps{
 		Props: awscdk.StackProps{
 			Env: env(),
 		},
-		ImagesBucket: images.Bucket,
 
-		Vpc:                               database.Vpc,
-		LambdaSecretsManagerSecurityGroup: database.LambdaSecretsManagerSecurityGroup,
-		DbInstance:                        database.DbInstance,
-		ProxyEndpoint:                     database.ProxyEndpoint,
+		Vpc:                               network.Vpc,
+		LambdaSecretsManagerSecurityGroup: network.LambdaSecretsManagerSecurityGroup,
+		ProxySecurityGroup:                database.ProxySecurityGroup,
 		LambdaSecurityGroup:               database.LambdaSecurityGroup,
+		DbInstance:                        database.DbInstance,
+		DbProxy:                           database.Proxy,
+
+		ImagesBucket: image.Bucket,
+
+		Authorizer: authorization.Authorizer,
 	})
 
 	stack.NewBastionStack(app, "BastionStack", &stack.BastionStackProps{
@@ -68,24 +96,29 @@ func main() {
 			Env: env(),
 		},
 
-		Vpc:             database.Vpc,
+		Vpc:             network.Vpc,
 		DbSecurityGroup: database.DbSecurityGroup,
 	})
 
-	if err := godotenv.Load(); err != nil {
-		log.Println(".env file not found, relying on system env vars")
-	}
-
-	stack.NewAuthenticationStack(app, "AuthenticationStack", &stack.AuthenticationStackProps{
+	stubLambda := stack.NewStubLambdaStack(app, "StubLambdaStack", &stack.StubLambdaStackProps{
 		Props: awscdk.StackProps{
 			Env: env(),
 		},
 	})
 
-	stack.NewStubLambdaStack(app, "StubLambdaStack", &stack.StubLambdaStackProps{
-		Props: awscdk.StackProps{
+	_ = stubLambda
+
+	stack.NewDatabaseInitStack(app, "DatabaseInitStack", &stack.Props{
+		StackProps: awscdk.StackProps{
 			Env: env(),
 		},
+
+		Vpc:                               network.Vpc,
+		LambdaSecretsManagerSecurityGroup: network.LambdaSecretsManagerSecurityGroup,
+		LambdaSecurityGroup:               database.LambdaSecurityGroup,
+		ProxySecurityGroup:                database.ProxySecurityGroup,
+		DbInstance:                        database.DbInstance,
+		Proxy:                             database.Proxy,
 	})
 
 	app.Synth(nil)

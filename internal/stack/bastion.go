@@ -13,7 +13,6 @@ import (
 type BastionStackProps struct {
 	awscdk.StackProps
 
-	// DatabaseStackData DatabaseStack
 	Vpc             awsec2.Vpc
 	DbSecurityGroup awsec2.SecurityGroup
 }
@@ -36,15 +35,16 @@ func NewBastionStack(scope constructs.Construct, id string, props *BastionStackP
 		endpointSecurityGroup,
 		awsec2.Port_Tcp(jsii.Number(443)),
 		jsii.String("Allow https to smm endpoints."),
-		jsii.Bool(false))
+		jsii.Bool(false),
+	)
 
 	endpointSecurityGroup.AddIngressRule(
 		bastionSecurityGroup,
 		awsec2.Port_Tcp(jsii.Number(443)),
 		jsii.String("Allow HTTPS from Bastion SG"),
-		jsii.Bool(false))
+		jsii.Bool(false),
+	)
 
-	// sg work to rds
 	bastionSecurityGroup.AddEgressRule(
 		dbSecurityGroup,
 		awsec2.Port_Tcp(jsii.Number(3306)),
