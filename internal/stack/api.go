@@ -28,6 +28,8 @@ type ApiStackProps struct {
 	DbProxy                           awsrds.DatabaseProxy
 
 	ImagesBucket awss3.Bucket
+
+	Authorizer awsapigatewayv2.IHttpRouteAuthorizer
 }
 
 func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) awscdk.Stack {

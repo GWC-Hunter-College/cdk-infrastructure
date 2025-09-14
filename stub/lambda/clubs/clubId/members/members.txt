@@ -1,0 +1,8 @@
+parent of leaving club and promotion but also
+
+put the query of:
+
+POST /clubs/{clubId}/members
+GET /clubs/{clubId}/members
+
+in this folder

@@ -1,0 +1,5 @@
+put the query of:
+
+GET /me/clubs/events
+
+in this folder

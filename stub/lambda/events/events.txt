@@ -1,0 +1,7 @@
+all queries regarding reading events
+
+put the query of:
+
+GET /events?startDate=&endDate=&
+
+in this folder
