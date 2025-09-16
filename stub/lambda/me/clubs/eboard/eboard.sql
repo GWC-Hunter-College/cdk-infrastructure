@@ -8,5 +8,5 @@ in this folder */
 
 SELECT cm.fk_student_id FROM club_members cm
 WHERE ? = cm.fk_student_id
-  AND cm.is_eboard = TRUE OR cm.is_owner = TRUE;
+  AND cm.member_is_eboard = TRUE OR cm.member_is_owner = TRUE;
 
