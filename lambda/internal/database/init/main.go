@@ -29,7 +29,7 @@ import (
 	3. curl "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{}'
 */
 
-var databaseNames = []string{"STAGING", "PRODUCTION"}
+var databaseNames = []string{"staging", "production"}
 
 var initTableMigrationFiles = []string{
 	"09_08_2025_create_core_tables_up.sql",
@@ -45,6 +45,7 @@ var (
 	databaseName  string
 	secretLoadErr error
 	// host          string
+
 )
 
 func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -116,6 +117,22 @@ func initDatabase(ctx context.Context) error {
 			log.Printf("Migration %s completed successfully", file)
 		}
 	}
+
+	seedConn, err := connectToMySQL(user, password, "STAGING", host)
+
+	if err != nil {
+		log.Printf("Failed to connect to MySQL to seed data: %v", err)
+		return err
+	}
+
+	defer seedConn.Close()
+
+	if err = runMigration(seedConn, "09_14_2025_seed_tables.sql"); err != nil {
+		log.Printf("Failed to seed staging database: %v", err)
+		return err
+	}
+
+	log.Printf("Database initialization and seeding complete")
 
 	return nil
 }

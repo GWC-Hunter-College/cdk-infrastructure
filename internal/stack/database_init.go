@@ -40,7 +40,7 @@ func NewDatabaseInitStack(scope constructs.Construct, id string, props *Props) {
 		&awslambda.DockerImageFunctionProps{
 			FunctionName: jsii.String("InitRDS"),
 			Description:  jsii.String("Lambda function to initialize RDS database"),
-			Code:         awslambda.DockerImageCode_FromImageAsset(jsii.String("lambda/database/init"), nil),
+			Code:         awslambda.DockerImageCode_FromImageAsset(jsii.String("lambda/internal/database/init"), nil),
 			Timeout:      awscdk.Duration_Minutes(jsii.Number(1)),
 			MemorySize:   jsii.Number(256),
 			Architecture: awslambda.Architecture_X86_64(),
