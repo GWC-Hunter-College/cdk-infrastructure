@@ -89,7 +89,7 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 
 	gateway_routes.TestRoutes(httpApi, stack)
 	gateway_routes.ClubRoutes(httpApi, stack, vpc, s3Params, dbParams)
-	gateway_routes.EventRoutes(httpApi, stack, vpc, s3Params, dbParams)
+	gateway_routes.EventImageRoutes(httpApi, stack, vpc, s3Params, dbParams)
 
 	// gateway_routes.DatabaseRoutes(httpApi, stack, gateway_routes.DatabaseRouteProps{
 	// 	Vpc:                               props.Vpc,

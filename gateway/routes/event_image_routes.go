@@ -11,7 +11,7 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
-// Helper function to add event routes to the API.
+// Helper function to add event image routes to the API.
 //
 // Should be noted that this also includes the event images and thumbnail endpoints even though
 // they are routed under clubs because they are event-specific.
@@ -24,7 +24,7 @@ import (
 // POST /clubs/{clubId}/events/{eventId}/images/confirm
 
 // POST /clubs/{clubId}/events/{eventId}/thumbnails
-func EventRoutes(
+func EventImageRoutes(
 	httpApi awsapigatewayv2.HttpApi,
 	stack awscdk.Stack,
 	vpc awsec2.Vpc,
