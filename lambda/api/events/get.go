@@ -1,0 +1,106 @@
+package main
+
+import (
+	"cdk-infrastructure/database/models"
+	gateway_helpers "cdk-infrastructure/gateway/helpers"
+	"cdk-infrastructure/utils/query_client"
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"time"
+
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+)
+
+var (
+	qc *query_client.QueryClient
+)
+
+func init() {
+	dbName := os.Getenv("DB_NAME")
+	arn := os.Getenv("DB_SECRET_ARN")
+	host := os.Getenv("DB_HOST")
+
+	client, err := query_client.NewClientFromHost(context.Background(), arn, dbName, host)
+
+	if err != nil {
+		log.Printf("Error creating query client: %v", err)
+
+		panic(err)
+	}
+
+	qc = client
+}
+
+func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	// All of these parameters are optional
+	startDate := request.QueryStringParameters["startDate"]
+	endDate := request.QueryStringParameters["endDate"]
+	limit := request.QueryStringParameters["limit"]
+	page := request.QueryStringParameters["page"]
+
+	if startDate == "" {
+		startDate = "1970-01-01"
+	}
+
+	if endDate == "" {
+		endDate = "2100-01-01"
+	}
+
+	// Default limit to 10 if not provided
+	if limit == "" {
+		limit = "10"
+	}
+
+	// TODO: Since seeded event data is less than 10 items, pagination is not fully testable yet
+	// Default page to 0 if not provided
+	if page == "" {
+		page = "0"
+	}
+
+	// Validate date formats
+	timeLayout := time.DateOnly
+	if _, err := time.Parse(timeLayout, startDate); err != nil {
+		return gateway_helpers.NewClientErrorGatewayResponse("Invalid startDate format. Use YYYY-MM-DD.", nil)
+	}
+
+	if _, err := time.Parse(timeLayout, endDate); err != nil {
+		return gateway_helpers.NewClientErrorGatewayResponse("Invalid endDate format. Use YYYY-MM-DD.", nil)
+	}
+
+	// Validate offset
+	limitNum, err := strconv.Atoi(limit)
+	if err != nil || limitNum <= 0 {
+		return gateway_helpers.NewClientErrorGatewayResponse("Invalid limit. Must be a positive integer.", nil)
+	}
+
+	pageNum, err := strconv.Atoi(page)
+	if err != nil || pageNum < 0 {
+		return gateway_helpers.NewClientErrorGatewayResponse("Invalid page number. Must be a non-negative integer.", nil)
+	}
+
+	offset := strconv.Itoa(pageNum * limitNum)
+
+	var events = []models.Event{}
+	selectEventsQuery := query_client.NewQuery("events/SELECT_events_by_period_posted.sql", startDate, endDate, limit, offset)
+	err = qc.Select(&events, selectEventsQuery)
+
+	if err != nil {
+		log.Printf("Error executing query: %v", err)
+
+		return gateway_helpers.NewServerErrorGatewayResponse("Could not fetch events: "+err.Error(), nil)
+	}
+
+	response := map[string]any{
+		"events": events,
+	}
+
+	return gateway_helpers.NewSuccessGatewayResponse(fmt.Sprintf("Succesfully fetched %d events", len(events)), response)
+}
+
+func main() {
+	lambda.Start(handler)
+}
