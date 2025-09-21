@@ -33,8 +33,6 @@ func GetEventThumbnailPresignFunction(
 		},
 	})
 
-	bucket.GrantRead(function, "events/*/thumbnails/*")
-
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
 		jsii.String("GetEventThumbnailPresignIntegration"),
 		function,
@@ -59,8 +57,6 @@ func PostEventThumbnailsIntegration(
 		},
 		Vpc: vpc,
 	})
-
-	bucket.GrantPut(function, "events/*/thumbnails/*")
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
 		jsii.String("PostEventThumbnailsPresignIntegration"),

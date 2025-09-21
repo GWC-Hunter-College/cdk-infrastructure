@@ -27,7 +27,8 @@ type ApiStackProps struct {
 	DbInstance                        awsrds.DatabaseInstance
 	DbProxy                           awsrds.DatabaseProxy
 
-	ImagesBucket awss3.Bucket
+	BucketName *string
+	Bucket     awss3.Bucket
 
 	Authorizer awsapigatewayv2.IHttpRouteAuthorizer
 }
@@ -75,7 +76,7 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	vpc := props.Vpc
 
 	s3Params := gateway_parameters.S3PermissionsParameters{
-		Bucket: props.ImagesBucket,
+		Bucket: props.Bucket,
 	}
 
 	dbParams := gateway_parameters.DatabaseConnectionParameters{

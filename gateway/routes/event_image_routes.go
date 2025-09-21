@@ -33,11 +33,13 @@ func EventImageRoutes(
 ) {
 	dbInstance := dbParams.DbInstance
 	dbSecret := dbParams.Secret
+	bucket := s3Params.Bucket
 
 	/// Event Images
 	// GET /clubs/{clubId}/events/{eventId}/images
 	getEventImagesInt, getEventImagesFn := integrations.GetEventImagesIntegration(stack, vpc, s3Params, dbParams)
 	gateway_helpers.GrantRdsAccessToLambda(getEventImagesFn, dbInstance, dbSecret)
+	gateway_helpers.GrantS3AccessToLambda(getEventImagesFn, bucket, "events/*", true, false)
 
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path: jsii.String("/clubs/{clubId}/events/{eventId}/images"),
@@ -48,7 +50,8 @@ func EventImageRoutes(
 	})
 
 	// POST /clubs/{clubId}/events/{eventId}/images
-	postEventImagesInt, _ := integrations.PostEventImagesIntegration(stack, vpc, s3Params)
+	postEventImagesInt, postEventImagesFn := integrations.PostEventImagesIntegration(stack, vpc, s3Params)
+	gateway_helpers.GrantS3AccessToLambda(postEventImagesFn, bucket, "events/*", false, true)
 
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path: jsii.String("/clubs/{clubId}/events/{eventId}/images"),
@@ -74,7 +77,8 @@ func EventImageRoutes(
 
 	// Event Thumbnails
 	// POST /clubs/{clubId}/events/{eventId}/thumbnails
-	postEventThumbnailsInt, _ := integrations.PostEventThumbnailsIntegration(stack, vpc, s3Params)
+	postEventThumbnailsInt, postEventImagesFn := integrations.PostEventThumbnailsIntegration(stack, vpc, s3Params)
+	gateway_helpers.GrantS3AccessToLambda(postEventImagesFn, bucket, "events/*/thumbnails/*", false, true)
 
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path: jsii.String("/clubs/{clubId}/events/{eventId}/thumbnails"),

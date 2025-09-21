@@ -43,8 +43,6 @@ func GetEventImagesIntegration(
 		Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
 	})
 
-	bucket.GrantRead(function, "events/*")
-
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
 		jsii.String("GetEventImagePresignIntegration"),
 		function,
@@ -65,8 +63,6 @@ func PostEventImagesIntegration(stack awscdk.Stack, vpc awsec2.IVpc, s3Params ga
 		},
 		Vpc: vpc,
 	})
-
-	bucket.GrantPut(function, "events/*")
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
 		jsii.String("PostEventImagePresignIntegration"),

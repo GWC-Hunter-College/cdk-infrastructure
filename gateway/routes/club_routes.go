@@ -1,6 +1,7 @@
 package gateway_routes
 
 import (
+	gateway_helpers "cdk-infrastructure/gateway/helpers"
 	"cdk-infrastructure/gateway/integrations"
 	gateway_parameters "cdk-infrastructure/gateway/parameters"
 
@@ -25,6 +26,7 @@ func ClubRoutes(
 	// proxySg := dbParams.RdsProxySG
 	// dbInstance := dbParams.DbInstance
 	// dbSecret := dbParams.Secret
+	bucket := s3Params.Bucket
 
 	// GET /clubs/{clubId}/thumbnails
 	// getThumbnailsInt, getThumbnailsFn := integrations.GetClubThumbnailsIntegration(stack, s3Params)
@@ -38,13 +40,13 @@ func ClubRoutes(
 	// })
 
 	// POST /clubs/{clubId}/thumbnails
-	postThumbnailsInt, _ := integrations.PostClubThumbnailsIntegration(stack, vpc, s3Params)
+	postThumbnailsInt, postThumbnailsFunc := integrations.PostClubThumbnailsIntegration(stack, vpc, s3Params)
+	gateway_helpers.GrantS3AccessToLambda(postThumbnailsFunc, bucket, "clubs/*/thumbnails/*", false, true)
 
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path: jsii.String("/clubs/{clubId}/thumbnails"),
 		Methods: &[]awsapigatewayv2.HttpMethod{
 			awsapigatewayv2.HttpMethod_POST,
-			// awsapigatewayv2.HttpMethod_OPTIONS,
 		},
 		Integration: postThumbnailsInt,
 	})
