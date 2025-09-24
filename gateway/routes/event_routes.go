@@ -25,4 +25,13 @@ func PublicEventRoutes(httpApi awsapigatewayv2.HttpApi, stack awscdk.Stack, vpc 
 		},
 		Integration: integrations.GetEventsByPeriod(stack, vpc, dbParams),
 	})
+
+	// /events/{eventId}
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path: jsii.String("/events/{eventId}"),
+		Methods: &[]awsapigatewayv2.HttpMethod{
+			awsapigatewayv2.HttpMethod_GET,
+		},
+		Integration: integrations.GetEventById(stack, vpc, dbParams),
+	})
 }
