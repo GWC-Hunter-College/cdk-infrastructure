@@ -35,6 +35,28 @@ func init() {
 	qc = client
 }
 
+type SQLSchema struct {
+	ClubID    string  `db:"club_id"`
+	IsOwner   bool    `db:"is_owner"`
+	ObjectKey *string `db:"object_key"`
+	models.Event
+}
+
+type Club struct {
+	ClubID       string `json:"id"`
+	ThumbnailUrl string `json:"thumbnailUrl"`
+}
+
+type OwnerSchema struct {
+	Owner      Club   `json:"owner"`
+	Associates []Club `json:"associates"`
+}
+
+type ResponseSchema struct {
+	models.Event
+	OwnerSchema
+}
+
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	// All of these parameters are optional
 	startDate := request.QueryStringParameters["startDate"]
@@ -84,7 +106,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 	offset := strconv.Itoa(pageNum * limitNum)
 
-	var events = []models.Event{}
+	events := []SQLSchema{}
 	selectEventsQuery := query_client.NewQuery("events/SELECT_events_by_period_posted.sql", startDate, endDate, limit, offset)
 	err = qc.Select(&events, selectEventsQuery)
 
@@ -94,8 +116,50 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		return gateway_helpers.NewServerErrorGatewayResponse("Could not fetch events: "+err.Error(), nil)
 	}
 
+	// Populate resulting events
+	eventsToResponseEvent := map[int]ResponseSchema{}
+
+	for _, event := range events {
+		_, exists := eventsToResponseEvent[event.EventID]
+
+		var isOwner bool = event.IsOwner
+
+		club := Club{
+			ClubID: event.ClubID,
+			// This is a placeholder thumbnail URL
+			// TODO: Get a new presigned URL when club profile images are implemented
+			ThumbnailUrl: "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=",
+		}
+
+		if !exists {
+			eventsToResponseEvent[event.EventID] = ResponseSchema{
+				Event: event.Event,
+				OwnerSchema: OwnerSchema{
+					Owner:      Club{},
+					Associates: []Club{},
+				},
+			}
+		}
+
+		var existingEvent ResponseSchema = eventsToResponseEvent[event.EventID]
+
+		if isOwner {
+			existingEvent.Owner = club
+		} else {
+			existingEvent.Associates = append(existingEvent.Associates, club)
+		}
+
+		eventsToResponseEvent[event.EventID] = existingEvent
+	}
+
+	responseEvents := []ResponseSchema{}
+
+	for _, event := range eventsToResponseEvent {
+		responseEvents = append(responseEvents, event)
+	}
+
 	response := map[string]any{
-		"events": events,
+		"events": responseEvents,
 	}
 
 	return gateway_helpers.NewSuccessGatewayResponse(fmt.Sprintf("Succesfully fetched %d events", len(events)), response)
