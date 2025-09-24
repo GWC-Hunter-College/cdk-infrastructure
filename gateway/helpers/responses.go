@@ -82,6 +82,44 @@ func NewClientErrorGatewayResponse(errorMessage string, extraFields map[string]a
 	}, nil
 }
 
+// NewErrorGatewayResponse constructs an API Gateway error response with status code 404 and the supplied body.
+//
+// Response body is constructed as below:
+//
+//	{
+//	    "error": "errorMessage",
+//	    ...extraFields
+//	}
+func NewNotFoundGatewayResponse(errorMessage string, extraFields map[string]any) (events.APIGatewayProxyResponse, error) {
+	response := map[string]any{
+		"error": errorMessage,
+	}
+
+	for k, v := range extraFields {
+		response[k] = v
+	}
+
+	body, err := json.Marshal(response)
+
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 500,
+			Body:       "Internal Server Error - Marshalling failed: " + err.Error(),
+		}, nil
+	}
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: 404,
+		Headers: map[string]string{
+			"Content-Type":                 "application/json",
+			"Access-Control-Allow-Origin":  "*",
+			"Access-Control-Allow-Methods": "*",
+			"Access-Control-Allow-Headers": "Content-Type,Authorization",
+		},
+		Body: string(body),
+	}, nil
+}
+
 // NewErrorGatewayResponse constructs an API Gateway error response with status code 500 and the supplied body.
 //
 // Response body is constructed as below:
