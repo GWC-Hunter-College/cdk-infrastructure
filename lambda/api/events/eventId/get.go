@@ -1,8 +1,8 @@
 package main
 
 import (
-	"cdk-infrastructure/database/models"
 	gateway_helpers "cdk-infrastructure/gateway/helpers"
+	event_schema "cdk-infrastructure/lambda/api/events/schema"
 	"cdk-infrastructure/utils/query_client"
 	"context"
 	"fmt"
@@ -33,28 +33,6 @@ func init() {
 	qc = client
 }
 
-type SQLSchema struct {
-	ClubID    string  `db:"club_id"`
-	IsOwner   bool    `db:"is_owner"`
-	ObjectKey *string `db:"object_key"`
-	models.Event
-}
-
-type Club struct {
-	ClubID       string `json:"id"`
-	ThumbnailUrl string `json:"thumbnailUrl"`
-}
-
-type OwnerSchema struct {
-	Owner      Club   `json:"owner"`
-	Associates []Club `json:"associates"`
-}
-
-type ResponseSchema struct {
-	models.Event
-	OwnerSchema
-}
-
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	eventId := request.PathParameters["eventId"]
 
@@ -62,7 +40,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		return gateway_helpers.NewClientErrorGatewayResponse("Missing eventId path parameter", nil)
 	}
 
-	events := []SQLSchema{}
+	events := []event_schema.SQLSchema{}
 	selectEventsQuery := query_client.NewQuery("events/SELECT_event_by_id.sql", "posted", eventId)
 	err := qc.Select(&events, selectEventsQuery)
 
@@ -77,18 +55,18 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	// Populate resulting events
-	responseEvent := ResponseSchema{
+	responseEvent := event_schema.ResponseSchema{
 		Event: events[0].Event,
-		OwnerSchema: OwnerSchema{
-			Owner:      Club{},
-			Associates: []Club{},
+		OwnerSchema: event_schema.OwnerSchema{
+			Owner:      event_schema.Club{},
+			Associates: []event_schema.Club{},
 		},
 	}
 
 	for _, event := range events {
 		var isOwner bool = event.IsOwner
 
-		club := Club{
+		club := event_schema.Club{
 			ClubID: event.ClubID,
 			// This is a placeholder thumbnail URL
 			// TODO: Get a new presigned URL when club profile images are implemented

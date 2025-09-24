@@ -1,8 +1,8 @@
 package main
 
 import (
-	"cdk-infrastructure/database/models"
 	gateway_helpers "cdk-infrastructure/gateway/helpers"
+	event_schema "cdk-infrastructure/lambda/api/events/schema"
 	"cdk-infrastructure/utils/query_client"
 	"context"
 	"fmt"
@@ -33,28 +33,6 @@ func init() {
 	}
 
 	qc = client
-}
-
-type SQLSchema struct {
-	ClubID    string  `db:"club_id"`
-	IsOwner   bool    `db:"is_owner"`
-	ObjectKey *string `db:"object_key"`
-	models.Event
-}
-
-type Club struct {
-	ClubID       string `json:"id"`
-	ThumbnailUrl string `json:"thumbnailUrl"`
-}
-
-type OwnerSchema struct {
-	Owner      Club   `json:"owner"`
-	Associates []Club `json:"associates"`
-}
-
-type ResponseSchema struct {
-	models.Event
-	OwnerSchema
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -106,7 +84,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 	offset := strconv.Itoa(pageNum * limitNum)
 
-	events := []SQLSchema{}
+	events := []event_schema.SQLSchema{}
 	selectEventsQuery := query_client.NewQuery("events/SELECT_events_by_period.sql", "posted", startDate, endDate, limit, offset)
 	err = qc.Select(&events, selectEventsQuery)
 
@@ -117,14 +95,14 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	// Populate resulting events
-	eventsToResponseEvent := map[int]ResponseSchema{}
+	eventsToResponseEvent := map[int]event_schema.ResponseSchema{}
 
 	for _, event := range events {
 		_, exists := eventsToResponseEvent[event.EventID]
 
 		var isOwner bool = event.IsOwner
 
-		club := Club{
+		club := event_schema.Club{
 			ClubID: event.ClubID,
 			// This is a placeholder thumbnail URL
 			// TODO: Get a new presigned URL when club profile images are implemented
@@ -132,16 +110,17 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		}
 
 		if !exists {
-			eventsToResponseEvent[event.EventID] = ResponseSchema{
-				Event: event.Event,
-				OwnerSchema: OwnerSchema{
-					Owner:      Club{},
-					Associates: []Club{},
+			eventsToResponseEvent[event.EventID] = event_schema.ResponseSchema{
+				Event:       event.Event,
+				Description: event.Description,
+				OwnerSchema: event_schema.OwnerSchema{
+					Owner:      event_schema.Club{},
+					Associates: []event_schema.Club{},
 				},
 			}
 		}
 
-		var existingEvent ResponseSchema = eventsToResponseEvent[event.EventID]
+		var existingEvent event_schema.ResponseSchema = eventsToResponseEvent[event.EventID]
 
 		if isOwner {
 			existingEvent.Owner = club
@@ -152,7 +131,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		eventsToResponseEvent[event.EventID] = existingEvent
 	}
 
-	responseEvents := []ResponseSchema{}
+	responseEvents := []event_schema.ResponseSchema{}
 
 	for _, event := range eventsToResponseEvent {
 		responseEvents = append(responseEvents, event)
