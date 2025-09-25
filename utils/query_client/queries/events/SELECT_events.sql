@@ -7,13 +7,16 @@ SELECT
 	ec.fk_club_id AS club_id, 
 	ec.club_is_event_owner AS is_owner,
     i.object_key AS object_key,
-	e.*
+	e.*,
+    ed.description AS description
 FROM events e
 INNER JOIN events_to_clubs ec ON e.id = ec.fk_event_id
 INNER JOIN clubs c ON ec.fk_club_id = c.id
 LEFT JOIN images i ON c.fk_logo_id = i.id
+LEFT JOIN event_descriptions ed ON e.id = ed.fk_event_id
 WHERE status LIKE ?
-    AND (e.start_date > ?)
-    AND (e.end_date < ?)
+    AND e.id LIKE ?
+    AND e.start_date > ?
+    AND e.end_date < ?
 ORDER BY e.start_date ASC
 LIMIT ? OFFSET ?;

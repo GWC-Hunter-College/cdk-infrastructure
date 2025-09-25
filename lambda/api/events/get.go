@@ -85,7 +85,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	offset := strconv.Itoa(pageNum * limitNum)
 
 	events := []event_schema.SQLSchema{}
-	selectEventsQuery := query_client.NewQuery("events/SELECT_events_by_period.sql", "posted", startDate, endDate, limit, offset)
+	selectEventsQuery := query_client.NewQuery("events/SELECT_events.sql", "posted", "%", startDate, endDate, limit, offset)
 	err = qc.Select(&events, selectEventsQuery)
 
 	if err != nil {

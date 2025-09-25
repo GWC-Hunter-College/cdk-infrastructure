@@ -41,7 +41,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	events := []event_schema.SQLSchema{}
-	selectEventsQuery := query_client.NewQuery("events/SELECT_event_by_id.sql", "posted", eventId)
+	selectEventsQuery := query_client.NewQuery("events/SELECT_events.sql", "posted", eventId, "1970-01-01", "2100-01-01", 100, 0)
 	err := qc.Select(&events, selectEventsQuery)
 
 	if err != nil {
@@ -56,7 +56,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 	// Populate resulting events
 	responseEvent := event_schema.ResponseSchema{
-		Event: events[0].Event,
+		Event:       events[0].Event,
+		Description: events[0].Description,
 		OwnerSchema: event_schema.OwnerSchema{
 			Owner:      event_schema.Club{},
 			Associates: []event_schema.Club{},
