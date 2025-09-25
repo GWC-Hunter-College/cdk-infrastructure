@@ -59,18 +59,17 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	})
 
 	var databaseName string
-	productionStatus := strings.ToLower(os.Getenv("DEPLOYMENT_STATUS"))
+	productionStatus := strings.ToLower(os.Getenv("PRODUCTION_STATUS"))
 
-	if productionStatus == "production" ||
-		productionStatus == "prod" {
-		databaseName = "PRODUCTION"
+	if productionStatus == "true" {
+		databaseName = "PROD"
 	} else {
 		databaseName = "STAGING"
 	}
 
 	awscdk.NewCfnOutput(stack, jsii.String("DeploymentStatus"), &awscdk.CfnOutputProps{
 		Value:       jsii.String(databaseName),
-		Description: jsii.String("The deployment status, either 'production' or 'staging'"),
+		Description: jsii.String("The deployment status, either 'PROD' or 'STAGING'"),
 	})
 
 	vpc := props.Vpc
@@ -89,7 +88,9 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	}
 
 	gateway_routes.TestRoutes(httpApi, stack)
-	gateway_routes.ClubRoutes(httpApi, stack, vpc, s3Params, dbParams)
+
+	gateway_routes.ClubImageRoutes(httpApi, stack, vpc, s3Params, dbParams)
+
 	gateway_routes.EventImageRoutes(httpApi, stack, vpc, s3Params, dbParams)
 
 	gateway_routes.PublicEventRoutes(httpApi, stack, vpc, dbParams)
