@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"log"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -10,7 +9,6 @@ import (
 
 	"cdk-infrastructure/utils/query_client"
 	"os"
-	"time"
 )
 
 var (
@@ -32,7 +30,8 @@ func init() {
 
 func handler(ctx context.Context, e events.CognitoEventUserPoolsPostConfirmation) (events.CognitoEventUserPoolsPostConfirmation, error) {
 	// Only act on the confirmation flow we care about.
-	if e.TriggerSource != "PostConfirmation_ConfirmSignUp" {
+	if e.TriggerSource != "PostConfirmation_ConfirmSignUp" &&
+		e.TriggerSource != "PostAuthentication_Authentication" {
 		return e, nil
 	}
 
@@ -46,25 +45,11 @@ func handler(ctx context.Context, e events.CognitoEventUserPoolsPostConfirmation
 
 	log.Printf("PostConfirmation received: sub=%s email=%s", sub, email)
 
-	// Short timeout so we never stall the Cognito flow.
-	cctx, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
+	upsertStudentQuery := query_client.NewQuery("students/UPSERT_student.sql", sub, email)
 
-	upsertStudentQuery := query_client.NewQuery("students/UPSERT_user.sql", sub, email)
-
-	// If your QueryClient uses positional params, pass sub, email in order.
 	res, err := qc.Exec(upsertStudentQuery)
 	if err != nil {
-		// Distinguish timeout from other errors.
-		if errors.Is(err, context.DeadlineExceeded) {
-			log.Printf("students upsert: TIMED OUT (sub=%s, email=%s)", sub, email)
-		} else if cctx.Err() != nil {
-			// If the context was canceled for another reason, log it explicitly.
-			log.Printf("students upsert: context error: %v (sub=%s, email=%s)", cctx.Err(), sub, email)
-		} else {
-			log.Printf("students upsert: DB error: %v (sub=%s, email=%s)", err, sub, email)
-		}
-		// Keep signup flow going.
+		log.Printf("students upsert: DB error: %v (sub=%s, email=%s)", err, sub, email)
 		return e, nil
 	}
 
@@ -89,9 +74,6 @@ func handler(ctx context.Context, e events.CognitoEventUserPoolsPostConfirmation
 	default:
 		log.Printf("students upsert: unexpected RowsAffected=%d sub=%s email=%s", aff, sub, email)
 	}
-
-	// Always return the original event to let Cognito continue.
-	return e, nil
 
 	// Always return the original event to let Cognito continue.
 	return e, nil

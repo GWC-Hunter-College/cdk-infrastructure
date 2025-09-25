@@ -64,7 +64,7 @@ func NewAuthorizationStack(scope constructs.Construct, id string, props *Authori
 	productionStatus := strings.ToLower(os.Getenv("PRODUCTION_STATUS"))
 
 	if productionStatus == "true" {
-		databaseName = "PROD"
+		databaseName = "PRODUCTION"
 	} else {
 		databaseName = "STAGING"
 	}
