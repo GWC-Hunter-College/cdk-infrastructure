@@ -1,6 +1,9 @@
 package stack
 
 import (
+	"os"
+	"strings"
+
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2authorizers"
 	"github.com/aws/aws-cdk-go/awscdklambdagoalpha/v2"
@@ -13,6 +16,8 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsrds"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
+
+	gateway_helpers "cdk-infrastructure/gateway/helpers"
 
 	cr "github.com/aws/aws-cdk-go/awscdk/v2/customresources"
 )
@@ -45,45 +50,47 @@ func NewAuthorizationStack(scope constructs.Construct, id string, props *Authori
 	//  =======================================
 	//  read props
 	//  =======================================
-	// vpc := props.Vpc
-	// dbInstance := props.DbInstance
-	// proxyEndpoint := props.ProxyEndpoint
+	vpc := props.Vpc
+	dbInstance := props.DbInstance
+	proxyEndpoint := props.ProxyEndpoint
 
-	// lambdaSecretsManagerSecurityGroup := props.LambdaSecretsManagerSecurityGroup
-	// lambdaSecurityGroup := props.LambdaSecurityGroup
+	lambdaSecretsManagerSecurityGroup := props.LambdaSecretsManagerSecurityGroup
+	lambdaSecurityGroup := props.LambdaSecurityGroup
+
+	//  =======================================
+	//  grab prod status
+	//  =======================================
+	var databaseName string
+	productionStatus := strings.ToLower(os.Getenv("PRODUCTION_STATUS"))
+
+	if productionStatus == "true" {
+		databaseName = "PRODUCTION"
+	} else {
+		databaseName = "STAGING"
+	}
 
 	//  =======================================
 	//  authenticaion lambda
 	//  =======================================
 
-	// postConfirmFunction := awslambda.NewDockerImageFunction(stack, jsii.String("PostConfirmUserUpsertFunction"),
-	// 	&awslambda.DockerImageFunctionProps{
-	// 		FunctionName: jsii.String("PostConfirmUserUpsert"),
-	// 		Description:  jsii.String("Lambda function to initialize RDS database"),
-	// 		Code:         awslambda.DockerImageCode_FromImageAsset(jsii.String("lambda/database/init"), nil),
-	// 		Timeout:      awscdk.Duration_Minutes(jsii.Number(1)),
-	// 		MemorySize:   jsii.Number(256),
-	// 		Architecture: awslambda.Architecture_X86_64(),
-	// 		Environment: &map[string]*string{
-	// 			"DB_SECRET_ARN": dbInstance.Secret().SecretArn(),
-	// 			"DB_HOST":       proxyEndpoint,
-	// 		},
-	// 		Vpc: vpc,
-	// 		SecurityGroups: &[]awsec2.ISecurityGroup{
-	// 			lambdaSecretsManagerSecurityGroup,
-	// 			lambdaSecurityGroup,
-	// 		},
-	// 		AllowPublicSubnet: jsii.Bool(true),
-	// 	},
-	// )
-
 	postConfirmFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("PostConfirmUserUpsertFunction"), &awscdklambdagoalpha.GoFunctionProps{
 		FunctionName: jsii.String("PostConfirmUserUpsert"),
-		Entry:        jsii.String("./lambda/internal/postConfirm/main.go"),
+		Description:  jsii.String("Upsert Cognito User to DB"),
+		Entry:        jsii.String("./lambda/internal/postConfirm/upsert.go"),
+		Environment: &map[string]*string{
+			"DB_SECRET_ARN": dbInstance.Secret().SecretArn(),
+			"DB_HOST":       jsii.String(*proxyEndpoint),
+			"DB_NAME":       jsii.String(databaseName),
+		},
+		Vpc:     vpc,
+		Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
+		SecurityGroups: &[]awsec2.ISecurityGroup{
+			lambdaSecurityGroup,
+			lambdaSecretsManagerSecurityGroup,
+		},
 	})
 
-	// dbInstance.Secret().
-	// 	GrantRead(postConfirmFunction, nil)
+	gateway_helpers.GrantRdsAccessToLambda(postConfirmFunction, dbInstance, dbInstance.Secret())
 
 	// allow Cognito to invoke your Lambda
 	postConfirmFunction.AddPermission(jsii.String("AllowCognitoInvoke"), &awslambda.Permission{
