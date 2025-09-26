@@ -13,3 +13,9 @@ const (
 	RoleEboard ClubRole = "eboard"
 	RoleOwner  ClubRole = "owner"
 )
+
+type ClubDetailed struct {
+	Club
+	WebsiteURL  *string `db:"website_url" json:website_url`
+	Description *string `db:"description" json:"description"`
+}

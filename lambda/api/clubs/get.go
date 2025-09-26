@@ -56,7 +56,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		"clubs": clubs,
 	}
 
-	return gateway_helpers.NewSuccessGatewayResponse(fmt.Sprintf("Succesfully fetched %d events", len(clubs)), response)
+	return gateway_helpers.NewSuccessGatewayResponse(fmt.Sprintf("Succesfully fetched %d clubs", len(clubs)), response)
 }
 
 func main() {

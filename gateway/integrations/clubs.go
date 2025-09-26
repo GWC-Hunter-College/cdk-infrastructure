@@ -50,3 +50,43 @@ func GetClubsByVerification(
 
 	return integration
 }
+
+// Integration for GET /clubs/{clubId}
+func GetClubById(
+	stack awscdk.Stack,
+	vpc awsec2.IVpc,
+	dbParams gateway_parameters.DatabaseConnectionParameters,
+) awsapigatewayv2integrations.HttpLambdaIntegration {
+	host := dbParams.DbHost
+	dbName := dbParams.DbName
+	arn := dbParams.Secret.SecretArn()
+	lambdaToProxySG := dbParams.LambdaToProxySG
+	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
+
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetClubById"), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("GetClubsById"),
+		Description:  jsii.String("Get by its clubId"),
+		Entry:        jsii.String("lambda/api/clubs/clubId/get.go"),
+		Environment: &map[string]*string{
+			"DB_SECRET_ARN": arn,
+			"DB_HOST":       jsii.String(host),
+			"DB_NAME":       jsii.String(dbName),
+		},
+		Vpc:     vpc,
+		Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
+		SecurityGroups: &[]awsec2.ISecurityGroup{
+			lambdaToProxySG,
+			lambdaToSecretsManagerSG,
+		},
+	})
+
+	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
+
+	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
+		jsii.String("GetClubByIdIntegration"),
+		function,
+		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
+	)
+
+	return integration
+}

@@ -20,13 +20,22 @@ func ClubRoutes(
 	vpc awsec2.Vpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
 ) {
-	// POST /clubs/{clubId}/events
+	// GET /clubs
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path: jsii.String("/clubs"),
 		Methods: &[]awsapigatewayv2.HttpMethod{
 			awsapigatewayv2.HttpMethod_GET,
 		},
 		Integration: integrations.GetClubsByVerification(stack, vpc, dbParams),
+	})
+
+	// Get /clubs/{clubId}
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path: jsii.String("/clubs/{clubId}"),
+		Methods: &[]awsapigatewayv2.HttpMethod{
+			awsapigatewayv2.HttpMethod_GET,
+		},
+		Integration: integrations.GetClubById(stack, vpc, dbParams),
 	})
 
 	/*
