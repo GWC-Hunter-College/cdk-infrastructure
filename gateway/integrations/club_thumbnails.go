@@ -28,8 +28,6 @@ func GetClubThumbnailsIntegration(
 		Vpc: vpc,
 	})
 
-	bucket.GrantRead(function, "clubs/*/thumbnails/*")
-
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
 		jsii.String("GetClubThumbnailPresignIntegration"),
 		function,
@@ -54,8 +52,6 @@ func PostClubThumbnailsIntegration(
 		},
 		Vpc: vpc,
 	})
-
-	bucket.GrantPut(function, "clubs/*/thumbnails/*")
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
 		jsii.String("PostClubThumbnailPresignIntegration"),

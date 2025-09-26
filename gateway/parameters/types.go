@@ -17,5 +17,5 @@ type DatabaseConnectionParameters struct {
 }
 
 type S3PermissionsParameters struct {
-	Bucket awss3.Bucket
+	Bucket awss3.IBucket
 }

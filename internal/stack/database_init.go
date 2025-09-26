@@ -18,7 +18,6 @@ type Props struct {
 	LambdaSecretsManagerSecurityGroup awsec2.SecurityGroup
 	LambdaSecurityGroup               awsec2.SecurityGroup
 	Proxy                             awsrds.DatabaseProxy
-	ProxySecurityGroup                awsec2.SecurityGroup
 }
 
 func NewDatabaseInitStack(scope constructs.Construct, id string, props *Props) {
@@ -33,14 +32,13 @@ func NewDatabaseInitStack(scope constructs.Construct, id string, props *Props) {
 	dbInstance := props.DbInstance
 	proxy := props.Proxy
 	vpc := props.Vpc
-	proxySecurityGroup := props.ProxySecurityGroup
 	proxyEndpoint := proxy.Endpoint()
 
 	initRDSFunc := awslambda.NewDockerImageFunction(stack, jsii.String("RDS Init Function"),
 		&awslambda.DockerImageFunctionProps{
 			FunctionName: jsii.String("InitRDS"),
 			Description:  jsii.String("Lambda function to initialize RDS database"),
-			Code:         awslambda.DockerImageCode_FromImageAsset(jsii.String("lambda/database/init"), nil),
+			Code:         awslambda.DockerImageCode_FromImageAsset(jsii.String("lambda/internal/database/init"), nil),
 			Timeout:      awscdk.Duration_Minutes(jsii.Number(1)),
 			MemorySize:   jsii.Number(256),
 			Architecture: awslambda.Architecture_X86_64(),
@@ -65,25 +63,7 @@ func NewDatabaseInitStack(scope constructs.Construct, id string, props *Props) {
 		OnEventHandler: initRDSFunc,
 	})
 
-	rdsInitializer := awscdk.NewCustomResource(stack, jsii.String("RdsInitializer"), &awscdk.CustomResourceProps{
+	awscdk.NewCustomResource(stack, jsii.String("RdsInitializer"), &awscdk.CustomResourceProps{
 		ServiceToken: provider.ServiceToken(),
 	})
-
-	// Ensure the database is ready before the Lambda runs
-	rdsInitializer.Node().AddDependency(dbInstance)
-
-	initToProxyIngress := awsec2.NewCfnSecurityGroupIngress(stack,
-		jsii.String("InitToProxyIngress"), // logical ID
-		&awsec2.CfnSecurityGroupIngressProps{
-			GroupId:               proxySecurityGroup.SecurityGroupId(),  // destination SG
-			SourceSecurityGroupId: lambdaSecurityGroup.SecurityGroupId(), // source SG
-			IpProtocol:            jsii.String("tcp"),
-			FromPort:              jsii.Number(3306),
-			ToPort:                jsii.Number(3306),
-		},
-	)
-
-	rdsInitializer.Node().AddDependency(proxy) // proxy ENIs/listener ready
-	// rdsInitializer.Node().AddDependency(tg)                 // instance registered
-	rdsInitializer.Node().AddDependency(initToProxyIngress) // ingress rule applied
 }

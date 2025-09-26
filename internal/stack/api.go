@@ -27,7 +27,8 @@ type ApiStackProps struct {
 	DbInstance                        awsrds.DatabaseInstance
 	DbProxy                           awsrds.DatabaseProxy
 
-	ImagesBucket awss3.Bucket
+	BucketName *string
+	Bucket     awss3.Bucket
 
 	Authorizer awsapigatewayv2.IHttpRouteAuthorizer
 }
@@ -58,24 +59,23 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	})
 
 	var databaseName string
-	productionStatus := strings.ToLower(os.Getenv("DEPLOYMENT_STATUS"))
+	productionStatus := strings.ToLower(os.Getenv("PRODUCTION_STATUS"))
 
-	if productionStatus == "production" ||
-		productionStatus == "prod" {
-		databaseName = "PRODUCTION"
+	if productionStatus == "true" {
+		databaseName = "PROD"
 	} else {
 		databaseName = "STAGING"
 	}
 
 	awscdk.NewCfnOutput(stack, jsii.String("DeploymentStatus"), &awscdk.CfnOutputProps{
 		Value:       jsii.String(databaseName),
-		Description: jsii.String("The deployment status, either 'production' or 'staging'"),
+		Description: jsii.String("The deployment status, either 'PROD' or 'STAGING'"),
 	})
 
 	vpc := props.Vpc
 
 	s3Params := gateway_parameters.S3PermissionsParameters{
-		Bucket: props.ImagesBucket,
+		Bucket: props.Bucket,
 	}
 
 	dbParams := gateway_parameters.DatabaseConnectionParameters{
@@ -88,8 +88,12 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	}
 
 	gateway_routes.TestRoutes(httpApi, stack)
-	gateway_routes.ClubRoutes(httpApi, stack, vpc, s3Params, dbParams)
-	gateway_routes.EventRoutes(httpApi, stack, vpc, s3Params, dbParams)
+
+	gateway_routes.ClubImageRoutes(httpApi, stack, vpc, s3Params, dbParams)
+
+	gateway_routes.EventImageRoutes(httpApi, stack, vpc, s3Params, dbParams)
+
+	gateway_routes.PublicEventRoutes(httpApi, stack, vpc, dbParams)
 
 	// gateway_routes.DatabaseRoutes(httpApi, stack, gateway_routes.DatabaseRouteProps{
 	// 	Vpc:                               props.Vpc,

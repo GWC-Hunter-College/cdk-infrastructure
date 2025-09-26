@@ -58,11 +58,11 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 		body.ImageID, "event-image", body.ObjectKey, body.Filename, body.Mimetype,
 	)
 
-	imageRow := queryClient.ExecuteQueryRow(insertImageQuery.Filepath, insertImageQuery.Args...)
+	insertImageResult, err := queryClient.Exec(insertImageQuery)
 
-	if err := imageRow.Err(); err != nil {
+	if err != nil {
 
-		log.Printf("Error inserting image: %v", imageRow.Err())
+		log.Printf("Error inserting image: %v", err)
 
 		return events.APIGatewayProxyResponse{
 			Body:       string(`message: "Database error: ` + err.Error() + `"`),
@@ -70,14 +70,15 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 		}, nil
 	}
 
+	log.Printf("Inserted %d images", insertImageResult)
+
 	insertEventImageQuery := query_client.NewQuery("images/INSERT_event_image.sql",
 		eventId, body.ImageID,
 	)
 
-	eventImageRow := queryClient.ExecuteQueryRow(insertEventImageQuery.Filepath, insertEventImageQuery.Args...)
+	insertEventImageResult, err := queryClient.Exec(insertEventImageQuery)
 
-	if err := eventImageRow.Err(); err != nil {
-
+	if err != nil {
 		log.Printf("Error inserting event image: %v", err)
 
 		return events.APIGatewayProxyResponse{
@@ -85,6 +86,8 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 			StatusCode: 500,
 		}, nil
 	}
+
+	log.Printf("Inserted %d event images", insertEventImageResult)
 
 	response := ResponseJSONSchema{
 		Message: "Image confirmed successfully",

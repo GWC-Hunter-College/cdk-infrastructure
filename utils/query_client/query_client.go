@@ -13,10 +13,11 @@ import (
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 )
 
 type QueryClient struct {
-	Conn *sql.DB
+	Conn *sqlx.DB
 
 	user     string
 	password string
@@ -61,14 +62,9 @@ func NewClient(ctx context.Context, dbSecretArn string, dbName string) (*QueryCl
 	dsn.Net = "tcp"
 	dsn.TLSConfig = "true"
 
-	conn, err := sql.Open("mysql", dsn.FormatDSN())
+	conn, err := sqlx.Connect("mysql", dsn.FormatDSN())
 
 	if err != nil {
-		return nil, err
-	}
-
-	// Verify connection
-	if err := conn.Ping(); err != nil {
 		return nil, err
 	}
 
@@ -102,14 +98,9 @@ func NewClientFromHost(ctx context.Context, dbSecretArn string, dbName string, h
 	dsn.DBName = dbName
 	dsn.TLSConfig = "true"
 
-	conn, err := sql.Open("mysql", dsn.FormatDSN())
+	conn, err := sqlx.Connect("mysql", dsn.FormatDSN())
 
 	if err != nil {
-		return nil, err
-	}
-
-	// Verify connection
-	if err := conn.Ping(); err != nil {
 		return nil, err
 	}
 
@@ -130,78 +121,177 @@ func (qc *QueryClient) ChangeDatabase(dbName string) error {
 	return nil
 }
 
-// Execute a raw query string with optional args for placeholders.
-func (qc *QueryClient) ExecuteQueryRaw(query string, args ...any) (*sql.Rows, error) {
-	return qc.Conn.Query(query, args...)
+// Execute a query that can only return one row from a file located at `filepath` with optional args for placeholders.
+// This method automatically scans the returned rows into `dest`.
+//
+// This method automatically scans the returned rows into `dest`. It should be the address to an interface instance.
+//
+// Example:
+//
+//	var event = models.Event{}
+//	selectEventQuery := query_client.NewQuery("events/SELECT_event.sql", arg1, arg2)
+//	err := qc.Select(&event, selectEventQuery)
+func (qc *QueryClient) Get(dest interface{}, query Query) error {
+	queryString, err := loadSQLFromFile(query.Filepath)
+	if err != nil {
+		log.Printf("Error loading SQL from file %s: %v", query.Filepath, err)
+		return err
+	}
+
+	err = qc.Conn.Get(dest, queryString, query.Args...)
+	if err != nil {
+		log.Printf("Error executing query from file %s: %v", query.Filepath, err)
+		return err
+	}
+
+	log.Printf("Successfully executed query from file: %s.", query.Filepath)
+
+	return nil
+}
+
+// Execute a query that can return multiple rows from a file located at `filepath` with optional args for placeholders.
+//
+// This method automatically scans the returned rows into `dest`. It should be the address of a slice of interface instances.
+//
+// Example:
+//
+//	var events = []models.Event{}
+//	selectEventsQuery := query_client.NewQuery("events/SELECT_events.sql", arg1, arg2)
+//	err := qc.Select(&events, selectEventsQuery)
+func (qc *QueryClient) Select(dest interface{}, query Query) error {
+	queryString, err := loadSQLFromFile(query.Filepath)
+	if err != nil {
+		log.Printf("Error loading SQL from file %s: %v", query.Filepath, err)
+		return err
+	}
+
+	err = qc.Conn.Select(dest, queryString, query.Args...)
+	if err != nil {
+		log.Printf("Error executing query from file %s: %v", query.Filepath, err)
+		return err
+	}
+
+	log.Printf("Successfully executed query from file: %s", query.Filepath)
+
+	return nil
 }
 
 // Execute a query from a file located at `filepath` with optional args for placeholders.
 //
-// Please note that to execute a SQL file that contains multiple statements that does not expect any rows returned
-// (e.g. migrations or bulk table creation), you can use `ExecuteFileBulk` instead.
-func (qc *QueryClient) ExecuteQuery(filepath string, args ...any) (*sql.Rows, error) {
-	query, err := loadSQLFromFile(filepath)
+// This is not expected to return any rows, and is typically used for INSERT, UPDATE, DELETE, or DDL statements.
+func (qc *QueryClient) Exec(query Query) (sql.Result, error) {
+	queryString, err := loadSQLFromFile(query.Filepath)
 	if err != nil {
+		log.Printf("Error loading SQL from file %s: %v", query.Filepath, err)
 		return nil, err
 	}
 
-	rows, err := qc.Conn.Query(query, args...)
+	result, err := qc.Conn.Exec(queryString, query.Args...)
 	if err != nil {
-		return nil, err
+		log.Printf("Error executing query from file %s: %v", query.Filepath, err)
+		return result, err
 	}
 
-	log.Printf("Successfully executed query from file: %s.", filepath)
+	log.Printf("Successfully executed query from file: %s", query.Filepath)
 
-	return rows, nil
+	return result, nil
 }
 
 // Execute a query from a file located at `filepath` that is expected to return a single row.
-func (qc *QueryClient) ExecuteQueryRow(filepath string, args ...any) *sql.Row {
-	query, err := loadSQLFromFile(filepath)
+//
+// This is the manual version of QueryClient.Get() that returns a sqlx.Row for custom scanning.
+func (qc *QueryClient) QueryRow(query Query) *sqlx.Row {
+	queryString, err := loadSQLFromFile(query.Filepath)
 	if err != nil {
+		log.Printf("Error loading SQL from file %s: %v", query.Filepath, err)
 		return nil
 	}
 
-	row := qc.Conn.QueryRow(query, args...)
+	row := qc.Conn.QueryRowx(queryString, query.Args...)
 
-	log.Printf("Successfully executed query from file: %s.", filepath)
+	log.Printf("Successfully executed query from file: %s.", query.Filepath)
 
 	return row
 }
 
-// Execute multiple queries in sequence, each from their own file with optional args for placeholders.
-// If any query fails, the execution stops and the error is returned.
+// Execute a query from a file located at `filepath` that is expected to return multiple rows.
 //
-// The verbose flag can be set to true to log each query execution. Plesae note that this will log
-// everything, including sensitive information if the query args contain such information.
-func (qc *QueryClient) ExecuteMultipleQueries(queries []Query, verbose bool) (rows []*sql.Rows, err error) {
-	for _, query := range queries {
-		resultingRows, err := qc.ExecuteQuery(query.Filepath, query.Args...)
+// This is the manual version of QueryClient.Select() that returns sqlx.Rows for custom scanning.
+func (qc *QueryClient) Query(query Query) (*sqlx.Rows, error) {
+	queryString, err := loadSQLFromFile(query.Filepath)
+	if err != nil {
+		log.Printf("Error loading SQL from file %s: %v", query.Filepath, err)
+		return nil, err
+	}
 
-		if verbose {
-			log.Printf("Executed query from file: %s with args: %v", query.Filepath, query.Args)
+	rows, err := qc.Conn.Queryx(queryString, query.Args...)
+	if err != nil {
+		log.Printf("Error executing query from file %s: %v", query.Filepath, err)
+		return nil, err
+	}
+
+	log.Printf("Successfully executed query from file: %s", query.Filepath)
+
+	return rows, nil
+}
+
+// Execute multiple queries in sequence, each from their own file with optional args for placeholders in a transaction.
+// If any query fails, the transaction is aborted and rolled back.
+func (qc *QueryClient) QueryMulti(queries []Query) (rows []*sqlx.Rows, err error) {
+	tx, err := qc.Conn.Beginx()
+	if err != nil {
+		log.Printf("Error beginning transaction: %v", err)
+		return nil, err
+	}
+
+	for _, query := range queries {
+		queryString, err := loadSQLFromFile(query.Filepath)
+		if err != nil {
+			log.Printf("Error loading SQL from file %s: %v", query.Filepath, err)
+			tx.Rollback()
+			return nil, err
 		}
 
+		resultingRows, err := tx.Queryx(queryString, query.Args...)
+
+		log.Printf("Executed query from file: %s", query.Filepath)
+
 		if err != nil {
+			log.Printf("Error executing query from file %s: %v", query.Filepath, err)
+
+			tx.Rollback()
+
 			return rows, err
 		}
 
 		rows = append(rows, resultingRows)
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		log.Printf("Error committing transaction: %v", err)
+		return nil, err
+	}
+
 	return rows, nil
 }
 
 // Execute a SQL file that contains multiple statements (e.g. for migrations or bulk table creation).
-// Each statement is executed in sequence.
+// Each statement is executed in sequence and atomically in a transaction.
 //
 // Please note that this method does NOT return any rows, meaning that this method should only be used
 // to execute statements that do not return rows (e.g. CREATE, INSERT, UPDATE, DELETE).
-func (qc *QueryClient) ExecuteFileBulk(filepath string) (results []sql.Result, err error) {
+//
+// The verbose flag can be set to true to log each statement execution. Please note that this will log
+// everything, including sensitive information if the statements contain such information.
+func (qc *QueryClient) ExecuteFileBulk(filepath string, verbose bool) (results []sql.Result, err error) {
 	query, err := loadSQLFromFile(filepath)
 	if err != nil {
+		log.Printf("Error loading SQL from file %s: %v", filepath, err)
 		return nil, err
 	}
+
+	tx, err := qc.Conn.Beginx()
 
 	statements := strings.Split(query, ";")
 
@@ -213,12 +303,22 @@ func (qc *QueryClient) ExecuteFileBulk(filepath string) (results []sql.Result, e
 
 		result, err := qc.Conn.Exec(statement)
 		if err != nil {
+			log.Printf("Error executing statement: %v", err)
+			tx.Rollback()
 			return nil, err
 		}
 
 		results = append(results, result)
 
-		log.Printf("Executed statement: %s", statement)
+		if verbose {
+			log.Printf("Executed statement: %s", statement)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Printf("Error committing transaction: %v", err)
+		return nil, err
 	}
 
 	return results, nil

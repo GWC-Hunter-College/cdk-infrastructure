@@ -86,7 +86,7 @@ func main() {
 		DbInstance:                        database.DbInstance,
 		DbProxy:                           database.Proxy,
 
-		ImagesBucket: image.Bucket,
+		Bucket: image.Bucket,
 
 		Authorizer: authorization.Authorizer,
 	})
@@ -116,7 +116,6 @@ func main() {
 		Vpc:                               network.Vpc,
 		LambdaSecretsManagerSecurityGroup: network.LambdaSecretsManagerSecurityGroup,
 		LambdaSecurityGroup:               database.LambdaSecurityGroup,
-		ProxySecurityGroup:                database.ProxySecurityGroup,
 		DbInstance:                        database.DbInstance,
 		Proxy:                             database.Proxy,
 	})
