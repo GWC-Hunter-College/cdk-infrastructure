@@ -22,10 +22,21 @@ func ClubRoutes(
 ) {
 	// POST /clubs/{clubId}/events
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
-		Path: jsii.String("/clubs/{clubId}/events"),
+		Path: jsii.String("/clubs"),
 		Methods: &[]awsapigatewayv2.HttpMethod{
-			awsapigatewayv2.HttpMethod_POST,
+			awsapigatewayv2.HttpMethod_GET,
 		},
-		Integration: integrations.PostNewClubEvent(stack, vpc, dbParams),
+		Integration: integrations.GetClubsByVerification(stack, vpc, dbParams),
 	})
+
+	/*
+		// POST /clubs/{clubId}/events
+		httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+			Path: jsii.String("/clubs/{clubId}/events"),
+			Methods: &[]awsapigatewayv2.HttpMethod{
+				awsapigatewayv2.HttpMethod_POST,
+			},
+			Integration: integrations.PostNewClubEvent(stack, vpc, dbParams),
+		})
+	*/
 }
