@@ -20,12 +20,41 @@ func ClubRoutes(
 	vpc awsec2.Vpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
 ) {
-	// POST /clubs/{clubId}/events
+	// GET /clubs
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path: jsii.String("/clubs"),
+		Methods: &[]awsapigatewayv2.HttpMethod{
+			awsapigatewayv2.HttpMethod_GET,
+		},
+		Integration: integrations.GetClubsByVerification(stack, vpc, dbParams),
+	})
+
+	// Get /clubs/{clubId}
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path: jsii.String("/clubs/{clubId}"),
+		Methods: &[]awsapigatewayv2.HttpMethod{
+			awsapigatewayv2.HttpMethod_GET,
+		},
+		Integration: integrations.GetClubById(stack, vpc, dbParams),
+	})
+
+	// GET /clubs/{clubId}/events
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path: jsii.String("/clubs/{clubId}/events"),
 		Methods: &[]awsapigatewayv2.HttpMethod{
-			awsapigatewayv2.HttpMethod_POST,
+			awsapigatewayv2.HttpMethod_GET,
 		},
-		Integration: integrations.PostNewClubEvent(stack, vpc, dbParams),
+		Integration: integrations.GetClubEventsByPeriod(stack, vpc, dbParams),
 	})
+
+	/*
+		// POST /clubs/{clubId}/events
+		httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+			Path: jsii.String("/clubs/{clubId}/events"),
+			Methods: &[]awsapigatewayv2.HttpMethod{
+				awsapigatewayv2.HttpMethod_POST,
+			},
+			Integration: integrations.PostNewClubEvent(stack, vpc, dbParams),
+		})
+	*/
 }

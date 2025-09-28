@@ -95,6 +95,8 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 
 	gateway_routes.PublicEventRoutes(httpApi, stack, vpc, dbParams)
 
+	gateway_routes.ClubRoutes(httpApi, stack, vpc, dbParams)
+
 	// gateway_routes.DatabaseRoutes(httpApi, stack, gateway_routes.DatabaseRouteProps{
 	// 	Vpc:                               props.Vpc,
 	// 	LambdaSecretsManagerSecurityGroup: props.LambdaSecretsManagerSecurityGroup,
