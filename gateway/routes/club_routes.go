@@ -38,6 +38,15 @@ func ClubRoutes(
 		Integration: integrations.GetClubById(stack, vpc, dbParams),
 	})
 
+	// GET /clubs/{clubId}/events
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path: jsii.String("/clubs/{clubId}/events"),
+		Methods: &[]awsapigatewayv2.HttpMethod{
+			awsapigatewayv2.HttpMethod_GET,
+		},
+		Integration: integrations.GetClubEventsByPeriod(stack, vpc, dbParams),
+	})
+
 	/*
 		// POST /clubs/{clubId}/events
 		httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
