@@ -76,7 +76,7 @@ func NewAuthorizationStack(scope constructs.Construct, id string, props *Authori
 	postConfirmFunction := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("PostConfirmUserUpsertFunction"), &awscdklambdagoalpha.GoFunctionProps{
 		FunctionName: jsii.String("PostConfirmUserUpsert"),
 		Description:  jsii.String("Upsert Cognito User to DB"),
-		Entry:        jsii.String("./lambda/internal/postConfirm/upsert.go"),
+		Entry:        jsii.String("./lambda/internal/auth/postConfirm/upsert.go"),
 		Environment: &map[string]*string{
 			"DB_SECRET_ARN": dbInstance.Secret().SecretArn(),
 			"DB_HOST":       jsii.String(*proxyEndpoint),
