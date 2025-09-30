@@ -63,14 +63,9 @@ func handler(ctx context.Context, event events.APIGatewayV2HTTPRequest) (events.
 
 	sub := claims["sub"]
 	email := claims["email"]
-
 	if sub == "" {
-		// 400 via teammate's helper
-		v1, _ := gateway_helpers.NewClientErrorGatewayResponse(
-			"missing sub in JWT claims",
-			map[string]any{"code": "ERR_NO_SUB"},
-		)
-		return v1ToV2(v1), nil
+		// If the authorizer passed the request, sub should be present; defensively handle missing.
+		return jsonResp(http.StatusForbidden, map[string]string{"error": "missing sub in JWT claims"})
 	}
 
 	// Enforce/ensure student row exists (or create it); fail the request if this fails.
@@ -94,18 +89,20 @@ func handler(ctx context.Context, event events.APIGatewayV2HTTPRequest) (events.
 	}
 
 	// Success -> 200 with sub (and email if you want)
-	payload := resp{Sub: sub, Email: email}
 	// If you prefer "message + fields", use the success helper:
 	// v1, _ := gateway_helpers.NewSuccessGatewayResponse("ok", map[string]any{"sub": sub, "email": email})
 	// return v1ToV2(v1), nil
 
-	// Or keep your simple JSON body (V2 native):
-	b, _ := json.Marshal(payload)
+	return jsonResp(http.StatusOK, resp{Sub: sub, Email: email})
+}
+
+func jsonResp(status int, v any) (events.APIGatewayV2HTTPResponse, error) {
+	b, _ := json.Marshal(v)
 	return events.APIGatewayV2HTTPResponse{
-		StatusCode: http.StatusOK,
+		StatusCode: status,
 		Headers: map[string]string{
 			"content-type":                 "application/json",
-			"access-control-allow-origin":  "*",
+			"access-control-allow-origin":  "*", // dev CORS; tighten in prod
 			"access-control-allow-headers": "authorization,content-type",
 		},
 		Body: string(b),
