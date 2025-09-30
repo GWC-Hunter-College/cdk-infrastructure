@@ -2,14 +2,15 @@ package main
 
 import (
 	// models "cdk-infrastructure/database/models"
+	"cdk-infrastructure/database/models"
 	gateway_helpers "cdk-infrastructure/gateway/helpers"
 	"cdk-infrastructure/lambda/internal/auth/utils"
 	"cdk-infrastructure/utils/query_client"
 	"context"
-	"encoding/json"
+	"database/sql"
 	"errors"
+	"fmt"
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -31,11 +32,6 @@ func init() {
 		panic(err)
 	}
 	qc = client
-}
-
-type resp struct {
-	Sub   string `json:"sub"`
-	Email string `json:"email,omitempty"`
 }
 
 // --- adapter: V1 -> V2 ---
@@ -63,10 +59,6 @@ func handler(ctx context.Context, event events.APIGatewayV2HTTPRequest) (events.
 
 	sub := claims["sub"]
 	email := claims["email"]
-	if sub == "" {
-		// If the authorizer passed the request, sub should be present; defensively handle missing.
-		return jsonResp(http.StatusForbidden, map[string]string{"error": "missing sub in JWT claims"})
-	}
 
 	// Enforce/ensure student row exists (or create it); fail the request if this fails.
 	if err := utils.RequireStudent(ctx, qc, sub, email); err != nil {
@@ -89,24 +81,41 @@ func handler(ctx context.Context, event events.APIGatewayV2HTTPRequest) (events.
 	}
 
 	// Success -> 200 with sub (and email if you want)
-	// If you prefer "message + fields", use the success helper:
-	// v1, _ := gateway_helpers.NewSuccessGatewayResponse("ok", map[string]any{"sub": sub, "email": email})
-	// return v1ToV2(v1), nil
+	me := models.Student{}
+	selectStudentMeQuery := query_client.NewQuery("students/SELECT_student_by_sub.sql", sub)
+	err := qc.Get(&me, selectStudentMeQuery)
 
-	return jsonResp(http.StatusOK, resp{Sub: sub, Email: email})
-}
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// not found → return 404
+			v1, _ := gateway_helpers.NewClientErrorGatewayResponse(
+				fmt.Sprintf("Student with id %s not found", sub),
+				map[string]any{"code": "ERR_NO_SUB"},
+			)
+			return v1ToV2(v1), nil
+		}
 
-func jsonResp(status int, v any) (events.APIGatewayV2HTTPResponse, error) {
-	b, _ := json.Marshal(v)
-	return events.APIGatewayV2HTTPResponse{
-		StatusCode: status,
-		Headers: map[string]string{
-			"content-type":                 "application/json",
-			"access-control-allow-origin":  "*", // dev CORS; tighten in prod
-			"access-control-allow-headers": "authorization,content-type",
-		},
-		Body: string(b),
-	}, nil
+		// DB error
+		// Any DB/other error -> 500
+		v1, _ := gateway_helpers.NewServerErrorGatewayResponse(
+			"failed to query student",
+			map[string]any{
+				"code":   "ERR_DB_FAILURE",
+				"detail": err.Error(),
+			},
+		)
+		return v1ToV2(v1), nil
+	}
+
+	response := map[string]any{
+		"student": me,
+	}
+
+	v1, _ := gateway_helpers.NewSuccessGatewayResponse(
+		fmt.Sprintf("Successfully fetched student %s", sub),
+		response,
+	)
+	return v1ToV2(v1), nil
 }
 
 func main() { lambda.Start(handler) }
