@@ -64,7 +64,7 @@ type SelectQuerySchema struct {
 	Image   models.Image `db:"*"            json:"image"`
 }
 
-func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 	defer queryClient.Conn.Close()
 
 	eventId := request.PathParameters["eventId"]
@@ -80,7 +80,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 			"message": "Could not retrieve images: " + err.Error(),
 		})
 
-		return events.APIGatewayProxyResponse{
+		return events.APIGatewayV2HTTPResponse{
 			StatusCode: 500,
 			Body:       string(response),
 		}, nil
@@ -106,7 +106,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 				"message": "Could not generate presigned URL: " + err.Error(),
 			})
 
-			return events.APIGatewayProxyResponse{
+			return events.APIGatewayV2HTTPResponse{
 				StatusCode: 500,
 				Body:       string(response),
 			}, nil
@@ -123,7 +123,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 		Images: outputImages,
 	})
 
-	return events.APIGatewayProxyResponse{
+	return events.APIGatewayV2HTTPResponse{
 		StatusCode: 200,
 		Headers: map[string]string{
 			"Access-Control-Allow-Origin":  "*",

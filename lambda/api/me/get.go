@@ -34,21 +34,6 @@ func init() {
 	qc = client
 }
 
-// --- adapter: V1 -> V2 ---
-func v1ToV2(r events.APIGatewayProxyResponse) events.APIGatewayV2HTTPResponse {
-	// Copy headers to V2 shape
-	h := map[string]string{}
-	for k, v := range r.Headers {
-		h[k] = v
-	}
-	return events.APIGatewayV2HTTPResponse{
-		StatusCode: r.StatusCode,
-		Headers:    h,
-		Body:       r.Body,
-		// If you rely on cookies or multi-value headers, mirror them here as needed.
-	}
-}
-
 func handler(ctx context.Context, event events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 	claims := map[string]string{}
 	if event.RequestContext.Authorizer != nil &&
@@ -63,21 +48,19 @@ func handler(ctx context.Context, event events.APIGatewayV2HTTPRequest) (events.
 	// Enforce/ensure student row exists (or create it); fail the request if this fails.
 	if err := utils.RequireStudent(ctx, qc, sub, email); err != nil {
 		if errors.Is(err, utils.ErrNoSub) {
-			v1, _ := gateway_helpers.NewClientErrorGatewayResponse(
+			return gateway_helpers.NewClientErrorGatewayResponse(
 				"missing sub in JWT claims",
 				map[string]any{"code": "ERR_NO_SUB"},
 			)
-			return v1ToV2(v1), nil
 		}
 		// Any DB/other error -> 500
-		v1, _ := gateway_helpers.NewServerErrorGatewayResponse(
+		return gateway_helpers.NewServerErrorGatewayResponse(
 			"failed to ensure student",
 			map[string]any{
 				"code":   "ERR_REQUIRE_STUDENT",
 				"detail": err.Error(),
 			},
 		)
-		return v1ToV2(v1), nil
 	}
 
 	// Success -> 200 with sub (and email if you want)
@@ -88,34 +71,31 @@ func handler(ctx context.Context, event events.APIGatewayV2HTTPRequest) (events.
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// not found → return 404
-			v1, _ := gateway_helpers.NewClientErrorGatewayResponse(
+			return gateway_helpers.NewClientErrorGatewayResponse(
 				fmt.Sprintf("Student with id %s not found", sub),
 				map[string]any{"code": "ERR_NO_SUB"},
 			)
-			return v1ToV2(v1), nil
 		}
 
 		// DB error
 		// Any DB/other error -> 500
-		v1, _ := gateway_helpers.NewServerErrorGatewayResponse(
+		return gateway_helpers.NewServerErrorGatewayResponse(
 			"failed to query student",
 			map[string]any{
 				"code":   "ERR_DB_FAILURE",
 				"detail": err.Error(),
 			},
 		)
-		return v1ToV2(v1), nil
 	}
 
 	response := map[string]any{
 		"student": me,
 	}
 
-	v1, _ := gateway_helpers.NewSuccessGatewayResponse(
+	return gateway_helpers.NewSuccessGatewayResponse(
 		fmt.Sprintf("Successfully fetched student %s", sub),
 		response,
 	)
-	return v1ToV2(v1), nil
 }
 
 func main() { lambda.Start(handler) }

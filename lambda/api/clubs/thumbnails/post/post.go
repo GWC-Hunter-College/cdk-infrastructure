@@ -44,14 +44,14 @@ type RequestBody struct {
 	Mimetype string `json:"mimetype"`
 }
 
-func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 	clubId := request.PathParameters["clubId"]
 
 	var body RequestBody
 	err := json.Unmarshal([]byte(request.Body), &body)
 
 	if err != nil || body.Filename == "" || body.Mimetype == "" {
-		return events.APIGatewayProxyResponse{
+		return events.APIGatewayV2HTTPResponse{
 			Body: string(`message: "Missing filename or mimetype"`), StatusCode: 400,
 		}, nil
 	}
@@ -78,7 +78,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 			"message": "Could not generate presigned URL: " + err.Error(),
 		})
 
-		return events.APIGatewayProxyResponse{
+		return events.APIGatewayV2HTTPResponse{
 			StatusCode: 500,
 			Body:       string(response),
 		}, nil
@@ -89,7 +89,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 		Key:       objectKey,
 	})
 
-	return events.APIGatewayProxyResponse{
+	return events.APIGatewayV2HTTPResponse{
 		StatusCode: 200,
 		Headers: map[string]string{
 			"Access-Control-Allow-Origin":  "*",

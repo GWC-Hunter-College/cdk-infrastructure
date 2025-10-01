@@ -2,7 +2,7 @@
 SELECT
   c.id,
   c.name,
-  COALESCE(i.object_key, '') AS thumbnail_url,
+  i.object_key AS thumbnail_url,
   CASE
     WHEN cm.member_is_owner = 1 THEN 'owner'
     WHEN cm.member_is_eboard = 1 THEN 'eboard'
