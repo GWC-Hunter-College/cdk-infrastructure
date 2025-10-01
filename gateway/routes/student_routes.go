@@ -36,4 +36,12 @@ func StudentMeRoutes(
 		Integration: integrations.GetMyClubs(stack, vpc, dbParams),
 		Authorizer:  Authorizer,
 	})
+
+	// GET /me/clubs route
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path:        jsii.String("/me/events"),
+		Methods:     &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
+		Integration: integrations.GetMyEvents(stack, vpc, dbParams),
+		Authorizer:  Authorizer,
+	})
 }
