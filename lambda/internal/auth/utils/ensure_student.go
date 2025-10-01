@@ -24,7 +24,7 @@ var ErrNoSub = errors.New("jwt has no sub")
 // 3) If DB error during EXISTS -> return error
 // 4) If missing -> insert (with email if provided, else sub-only)
 // 5) If insert fails -> return error; else return nil
-func RequireStudent(ctx context.Context, qc *query_client.QueryClient, sub, email string) error {
+func RequireStudent(ctx context.Context, qc *query_client.QueryClient, sub string, email string) error {
 	if sub == "" {
 		return ErrNoSub
 	}

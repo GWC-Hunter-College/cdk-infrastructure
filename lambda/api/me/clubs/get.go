@@ -63,7 +63,7 @@ func handler(ctx context.Context, event events.APIGatewayV2HTTPRequest) (events.
 	}
 
 	// Success -> 200 with sub (and email if you want)
-	myClubs := []models.MyClub{}
+	myClubs := []models.ClubWithRole{}
 	selectStudentClubsQuery := query_client.NewQuery("students/SELECT_student_clubs.sql", sub)
 	err := qc.Select(&myClubs, selectStudentClubsQuery)
 

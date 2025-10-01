@@ -149,7 +149,7 @@ func handler(ctx context.Context, request events.APIGatewayV2HTTPRequest) (event
 		"events": responseEvents,
 	}
 
-	return gateway_helpers.NewSuccessGatewayResponse(fmt.Sprintf("Succesfully fetched %d events", len(events)), response)
+	return gateway_helpers.NewSuccessGatewayResponse(fmt.Sprintf("Succesfully fetched %d events", len(responseEvents)), response)
 }
 
 func main() {
