@@ -21,7 +21,7 @@ func StudentMeRoutes(
 	dbParams gateway_parameters.DatabaseConnectionParameters,
 	Authorizer awsapigatewayv2.IHttpRouteAuthorizer,
 ) {
-	// add route to HTTP API
+	// GET /me route
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path:        jsii.String("/me"),
 		Methods:     &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
@@ -29,4 +29,11 @@ func StudentMeRoutes(
 		Authorizer:  Authorizer,
 	})
 
+	// GET /me/clubs route
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path:        jsii.String("/me/clubs"),
+		Methods:     &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
+		Integration: integrations.GetMyClubs(stack, vpc, dbParams),
+		Authorizer:  Authorizer,
+	})
 }
