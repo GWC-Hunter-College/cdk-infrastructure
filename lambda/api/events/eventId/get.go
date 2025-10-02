@@ -33,7 +33,7 @@ func init() {
 	qc = client
 }
 
-func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func handler(ctx context.Context, request events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 	eventId := request.PathParameters["eventId"]
 
 	if eventId == "" {

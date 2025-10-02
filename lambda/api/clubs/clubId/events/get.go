@@ -82,10 +82,18 @@ func handler(ctx context.Context, request events.APIGatewayV2HTTPRequest) (event
 		return gateway_helpers.NewClientErrorGatewayResponse("Invalid page number. Must be a non-negative integer.", nil)
 	}
 
+	clubIdStr := request.PathParameters["clubId"]
+
+	clubId, err := strconv.Atoi(clubIdStr)
+	if err != nil {
+		// handle error properly, maybe return 400 Bad Request
+		return gateway_helpers.NewClientErrorGatewayResponse(fmt.Sprintf("invalid clubId: %s", clubIdStr), nil)
+	}
+
 	offset := strconv.Itoa(pageNum * limitNum)
 
 	events := []event_schema.SQLSchema{}
-	selectEventsQuery := query_client.NewQuery("events/SELECT_events.sql", "posted", "%", startDate, endDate, limit, offset)
+	selectEventsQuery := query_client.NewQuery("clubs/SELECT_club_events.sql", "posted", "%", startDate, endDate, clubId, limit, offset)
 	err = qc.Select(&events, selectEventsQuery)
 
 	if err != nil {

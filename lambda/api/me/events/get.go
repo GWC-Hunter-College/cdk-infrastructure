@@ -1,10 +1,14 @@
 package main
 
 import (
+	// models "cdk-infrastructure/database/models"
+
 	gateway_helpers "cdk-infrastructure/gateway/helpers"
 	event_schema "cdk-infrastructure/lambda/api/events/schema"
+	"cdk-infrastructure/lambda/internal/auth/utils"
 	"cdk-infrastructure/utils/query_client"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -25,22 +29,47 @@ func init() {
 	host := os.Getenv("DB_HOST")
 
 	client, err := query_client.NewClientFromHost(context.Background(), arn, dbName, host)
-
 	if err != nil {
 		log.Printf("Error creating query client: %v", err)
-
 		panic(err)
 	}
-
 	qc = client
 }
 
-func handler(ctx context.Context, request events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
+func handler(ctx context.Context, event events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
+	claims := map[string]string{}
+	if event.RequestContext.Authorizer != nil &&
+		event.RequestContext.Authorizer.JWT != nil &&
+		event.RequestContext.Authorizer.JWT.Claims != nil {
+		claims = event.RequestContext.Authorizer.JWT.Claims
+	}
+
+	sub := claims["sub"]
+	email := claims["email"]
+
+	// Enforce/ensure student row exists (or create it); fail the request if this fails.
+	if err := utils.RequireStudent(ctx, qc, sub, email); err != nil {
+		if errors.Is(err, utils.ErrNoSub) {
+			return gateway_helpers.NewClientErrorGatewayResponse(
+				"missing sub in JWT claims",
+				map[string]any{"code": "ERR_NO_SUB"},
+			)
+		}
+		// Any DB/other error -> 500
+		return gateway_helpers.NewServerErrorGatewayResponse(
+			"failed to ensure student",
+			map[string]any{
+				"code":   "ERR_REQUIRE_STUDENT",
+				"detail": err.Error(),
+			},
+		)
+	}
+
 	// All of these parameters are optional
-	startDate := request.QueryStringParameters["startDate"]
-	endDate := request.QueryStringParameters["endDate"]
-	limit := request.QueryStringParameters["limit"]
-	page := request.QueryStringParameters["page"]
+	startDate := event.QueryStringParameters["startDate"]
+	endDate := event.QueryStringParameters["endDate"]
+	limit := event.QueryStringParameters["limit"]
+	page := event.QueryStringParameters["page"]
 
 	if startDate == "" {
 		startDate = "1970-01-01"
@@ -85,7 +114,7 @@ func handler(ctx context.Context, request events.APIGatewayV2HTTPRequest) (event
 	offset := strconv.Itoa(pageNum * limitNum)
 
 	events := []event_schema.SQLSchema{}
-	selectEventsQuery := query_client.NewQuery("events/SELECT_events.sql", "posted", "%", startDate, endDate, limit, offset)
+	selectEventsQuery := query_client.NewQuery("students/SELECT_student_events.sql", "posted", "%", startDate, endDate, sub, limit, offset)
 	err = qc.Select(&events, selectEventsQuery)
 
 	if err != nil {
@@ -141,9 +170,7 @@ func handler(ctx context.Context, request events.APIGatewayV2HTTPRequest) (event
 		"events": responseEvents,
 	}
 
-	return gateway_helpers.NewSuccessGatewayResponse(fmt.Sprintf("Succesfully fetched %d events", len(responseEvents)), response)
+	return gateway_helpers.NewSuccessGatewayResponse(fmt.Sprintf("Succesfully fetched %d events of student %s", len(responseEvents), sub), response)
 }
 
-func main() {
-	lambda.Start(handler)
-}
+func main() { lambda.Start(handler) }

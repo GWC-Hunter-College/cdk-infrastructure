@@ -11,8 +11,8 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
-// Integration for GET /clubs?verified=true
-func GetClubsByVerification(
+// Integration for GET /me
+func GetStudentMeBySub(
 	stack awscdk.Stack,
 	vpc awsec2.IVpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
@@ -23,10 +23,10 @@ func GetClubsByVerification(
 	lambdaToProxySG := dbParams.LambdaToProxySG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
-	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetClubsByVerificationFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("GetClubsByVerification"),
-		Description:  jsii.String("Get only verified clubs if verified is true, else get all clubs"),
-		Entry:        jsii.String("lambda/api/clubs/get.go"),
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetStudentMeFunction"), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("GetStudentMe"),
+		Description:  jsii.String("Returns the student data associated with the sub from jwt"),
+		Entry:        jsii.String("./lambda/api/me/get.go"),
 		Environment: &map[string]*string{
 			"DB_SECRET_ARN": arn,
 			"DB_HOST":       jsii.String(host),
@@ -43,7 +43,7 @@ func GetClubsByVerification(
 	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
-		jsii.String("GetClubsByVerificationIntegration"),
+		jsii.String("GetStudentMeIntegration"),
 		function,
 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 	)
@@ -51,8 +51,8 @@ func GetClubsByVerification(
 	return integration
 }
 
-// Integration for GET /clubs/{clubId}
-func GetClubById(
+// Integration for GET /me/clubs
+func GetMyClubs(
 	stack awscdk.Stack,
 	vpc awsec2.IVpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
@@ -63,10 +63,10 @@ func GetClubById(
 	lambdaToProxySG := dbParams.LambdaToProxySG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
-	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetClubByIdFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("GetClubsById"),
-		Description:  jsii.String("Get by its clubId"),
-		Entry:        jsii.String("lambda/api/clubs/clubId/get.go"),
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetMyClubsFunction"), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("GetMyClubs"),
+		Description:  jsii.String("Returns clubs of the student of asoociated jwt"),
+		Entry:        jsii.String("lambda/api/me/clubs/get.go"),
 		Environment: &map[string]*string{
 			"DB_SECRET_ARN": arn,
 			"DB_HOST":       jsii.String(host),
@@ -83,7 +83,7 @@ func GetClubById(
 	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
-		jsii.String("GetClubByIdIntegration"),
+		jsii.String("GetMyClubsIntegration"),
 		function,
 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 	)
@@ -91,8 +91,8 @@ func GetClubById(
 	return integration
 }
 
-// Integration for GET /clubs/{clubId}/events
-func GetClubEventsByPeriod(
+// Integration for GET /me/clubs
+func GetMyEvents(
 	stack awscdk.Stack,
 	vpc awsec2.IVpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
@@ -103,10 +103,10 @@ func GetClubEventsByPeriod(
 	lambdaToProxySG := dbParams.LambdaToProxySG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
-	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetClubEventsByPeriodFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("GetClubEventsByPeriod"),
-		Description:  jsii.String("Get posted events from a specific club between start and end date"),
-		Entry:        jsii.String("lambda/api/clubs/clubId/events/get.go"),
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetMyEventsFunction"), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("GetMyEvents"),
+		Description:  jsii.String("Returns events from clubs that a user has joined"),
+		Entry:        jsii.String("lambda/api/me/events/get.go"),
 		Environment: &map[string]*string{
 			"DB_SECRET_ARN": arn,
 			"DB_HOST":       jsii.String(host),
@@ -123,7 +123,7 @@ func GetClubEventsByPeriod(
 	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
-		jsii.String("GetClubEventsByPeriodIntegration"),
+		jsii.String("GetMyEventsIntegration"),
 		function,
 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 	)

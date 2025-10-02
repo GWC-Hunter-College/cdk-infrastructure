@@ -14,7 +14,7 @@ import (
 //	    "message": "successMessage",
 //	    ...extraFields
 //	}
-func NewSuccessGatewayResponse(message string, extraFields map[string]any) (events.APIGatewayProxyResponse, error) {
+func NewSuccessGatewayResponse(message string, extraFields map[string]any) (events.APIGatewayV2HTTPResponse, error) {
 	response := map[string]any{
 		"message": message,
 	}
@@ -26,13 +26,13 @@ func NewSuccessGatewayResponse(message string, extraFields map[string]any) (even
 	body, err := json.Marshal(response)
 
 	if err != nil {
-		return events.APIGatewayProxyResponse{
+		return events.APIGatewayV2HTTPResponse{
 			StatusCode: 500,
 			Body:       "Internal Server Error - Marshalling failed: " + err.Error(),
 		}, nil
 	}
 
-	return events.APIGatewayProxyResponse{
+	return events.APIGatewayV2HTTPResponse{
 		StatusCode: 200,
 		Headers: map[string]string{
 			"Content-Type":                 "application/json",
@@ -52,7 +52,7 @@ func NewSuccessGatewayResponse(message string, extraFields map[string]any) (even
 //	    "error": "errorMessage",
 //	    ...extraFields
 //	}
-func NewClientErrorGatewayResponse(errorMessage string, extraFields map[string]any) (events.APIGatewayProxyResponse, error) {
+func NewClientErrorGatewayResponse(errorMessage string, extraFields map[string]any) (events.APIGatewayV2HTTPResponse, error) {
 	response := map[string]any{
 		"error": errorMessage,
 	}
@@ -64,13 +64,13 @@ func NewClientErrorGatewayResponse(errorMessage string, extraFields map[string]a
 	body, err := json.Marshal(response)
 
 	if err != nil {
-		return events.APIGatewayProxyResponse{
+		return events.APIGatewayV2HTTPResponse{
 			StatusCode: 500,
 			Body:       "Internal Server Error - Marshalling failed: " + err.Error(),
 		}, nil
 	}
 
-	return events.APIGatewayProxyResponse{
+	return events.APIGatewayV2HTTPResponse{
 		StatusCode: 400,
 		Headers: map[string]string{
 			"Content-Type":                 "application/json",
@@ -90,7 +90,7 @@ func NewClientErrorGatewayResponse(errorMessage string, extraFields map[string]a
 //	    "error": "errorMessage",
 //	    ...extraFields
 //	}
-func NewNotFoundGatewayResponse(errorMessage string, extraFields map[string]any) (events.APIGatewayProxyResponse, error) {
+func NewNotFoundGatewayResponse(errorMessage string, extraFields map[string]any) (events.APIGatewayV2HTTPResponse, error) {
 	response := map[string]any{
 		"error": errorMessage,
 	}
@@ -102,13 +102,13 @@ func NewNotFoundGatewayResponse(errorMessage string, extraFields map[string]any)
 	body, err := json.Marshal(response)
 
 	if err != nil {
-		return events.APIGatewayProxyResponse{
+		return events.APIGatewayV2HTTPResponse{
 			StatusCode: 500,
 			Body:       "Internal Server Error - Marshalling failed: " + err.Error(),
 		}, nil
 	}
 
-	return events.APIGatewayProxyResponse{
+	return events.APIGatewayV2HTTPResponse{
 		StatusCode: 404,
 		Headers: map[string]string{
 			"Content-Type":                 "application/json",
@@ -128,7 +128,7 @@ func NewNotFoundGatewayResponse(errorMessage string, extraFields map[string]any)
 //	    "error": "errorMessage",
 //	    ...extraFields
 //	}
-func NewServerErrorGatewayResponse(errorMessage string, extraFields map[string]any) (events.APIGatewayProxyResponse, error) {
+func NewServerErrorGatewayResponse(errorMessage string, extraFields map[string]any) (events.APIGatewayV2HTTPResponse, error) {
 	response := map[string]any{
 		"error": errorMessage,
 	}
@@ -140,13 +140,13 @@ func NewServerErrorGatewayResponse(errorMessage string, extraFields map[string]a
 	body, err := json.Marshal(response)
 
 	if err != nil {
-		return events.APIGatewayProxyResponse{
+		return events.APIGatewayV2HTTPResponse{
 			StatusCode: 500,
 			Body:       "Internal Server Error - Marshalling failed: " + err.Error(),
 		}, nil
 	}
 
-	return events.APIGatewayProxyResponse{
+	return events.APIGatewayV2HTTPResponse{
 		StatusCode: 500,
 		Headers: map[string]string{
 			"Content-Type":                 "application/json",

@@ -39,7 +39,7 @@ type RequestBodySchema struct {
 	Mimetype  string `json:"mimetype"`
 }
 
-func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 	defer queryClient.Close()
 
 	eventId := request.PathParameters["eventId"]
@@ -48,7 +48,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	err := json.Unmarshal([]byte(request.Body), &body)
 
 	if err != nil || body.ImageID == "" || body.ObjectKey == "" || body.Filename == "" || body.Mimetype == "" {
-		return events.APIGatewayProxyResponse{
+		return events.APIGatewayV2HTTPResponse{
 			Body:       string(`message: "Missing imageId, objectKey, filename, or mimetype in request body"`),
 			StatusCode: 400,
 		}, nil
@@ -64,7 +64,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 
 		log.Printf("Error inserting image: %v", err)
 
-		return events.APIGatewayProxyResponse{
+		return events.APIGatewayV2HTTPResponse{
 			Body:       string(`message: "Database error: ` + err.Error() + `"`),
 			StatusCode: 500,
 		}, nil
@@ -81,7 +81,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	if err != nil {
 		log.Printf("Error inserting event image: %v", err)
 
-		return events.APIGatewayProxyResponse{
+		return events.APIGatewayV2HTTPResponse{
 			Body:       string(`message: "Database error: ` + err.Error() + `"`),
 			StatusCode: 500,
 		}, nil
@@ -97,13 +97,13 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	if err != nil {
 		log.Printf("Error marshalling response: %v", err)
 
-		return events.APIGatewayProxyResponse{
+		return events.APIGatewayV2HTTPResponse{
 			Body:       string(`message: "Internal JSON marshalling error"` + err.Error()),
 			StatusCode: 500,
 		}, nil
 	}
 
-	return events.APIGatewayProxyResponse{
+	return events.APIGatewayV2HTTPResponse{
 		Body:       string(responseJson),
 		StatusCode: 200,
 	}, nil
