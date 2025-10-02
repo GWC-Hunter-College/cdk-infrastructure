@@ -19,6 +19,7 @@ func ClubRoutes(
 	stack awscdk.Stack,
 	vpc awsec2.Vpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
+	authorizer awsapigatewayv2.IHttpRouteAuthorizer,
 ) {
 	// GET /clubs
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
@@ -47,14 +48,14 @@ func ClubRoutes(
 		Integration: integrations.GetClubEventsByPeriod(stack, vpc, dbParams),
 	})
 
-	/*
-		// POST /clubs/{clubId}/events
-		httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
-			Path: jsii.String("/clubs/{clubId}/events"),
-			Methods: &[]awsapigatewayv2.HttpMethod{
-				awsapigatewayv2.HttpMethod_POST,
-			},
-			Integration: integrations.PostNewClubEvent(stack, vpc, dbParams),
-		})
-	*/
+	// POST /clubs/{clubId}/events
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path: jsii.String("/clubs/{clubId}/events"),
+		Methods: &[]awsapigatewayv2.HttpMethod{
+			awsapigatewayv2.HttpMethod_POST,
+		},
+		Integration: integrations.PostNewClubEvent(stack, vpc, dbParams),
+		Authorizer:  authorizer,
+	})
+
 }
