@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cdk-infrastructure/database/models"
 	gateway_helpers "cdk-infrastructure/gateway/helpers"
 	event_schema "cdk-infrastructure/lambda/api/events/schema"
 	"cdk-infrastructure/utils/query_client"
@@ -58,20 +59,22 @@ func handler(ctx context.Context, request events.APIGatewayV2HTTPRequest) (event
 	responseEvent := event_schema.ResponseSchema{
 		Event:       events[0].Event,
 		Description: events[0].Description,
-		OwnerSchema: event_schema.OwnerSchema{
-			Owner:      event_schema.Club{},
-			Associates: []event_schema.Club{},
+		EventOwners: models.EventOwners{
+			Owner:      models.Club{},
+			Associates: []models.Club{},
 		},
 	}
 
 	for _, event := range events {
 		var isOwner bool = event.IsOwner
 
-		club := event_schema.Club{
-			ClubID: event.ClubID,
+		thumbnailUrl := "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0="
+
+		club := models.Club{
+			ID: event.ClubID,
 			// This is a placeholder thumbnail URL
 			// TODO: Get a new presigned URL when club profile images are implemented
-			ThumbnailUrl: "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=",
+			ThumbnailURL: &thumbnailUrl,
 		}
 
 		if isOwner {

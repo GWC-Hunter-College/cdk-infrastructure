@@ -3,9 +3,10 @@ package main
 import (
 	// models "cdk-infrastructure/database/models"
 
+	"cdk-infrastructure/database/models"
 	gateway_helpers "cdk-infrastructure/gateway/helpers"
 	event_schema "cdk-infrastructure/lambda/api/events/schema"
-	"cdk-infrastructure/lambda/internal/auth/utils"
+	authentication_utils "cdk-infrastructure/utils/authentication"
 	"cdk-infrastructure/utils/query_client"
 	"context"
 	"errors"
@@ -48,8 +49,8 @@ func handler(ctx context.Context, event events.APIGatewayV2HTTPRequest) (events.
 	email := claims["email"]
 
 	// Enforce/ensure student row exists (or create it); fail the request if this fails.
-	if err := utils.RequireStudent(ctx, qc, sub, email); err != nil {
-		if errors.Is(err, utils.ErrNoSub) {
+	if err := authentication_utils.RequireStudent(ctx, qc, sub, email); err != nil {
+		if errors.Is(err, authentication_utils.ErrNoSub) {
 			return gateway_helpers.NewClientErrorGatewayResponse(
 				"missing sub in JWT claims",
 				map[string]any{"code": "ERR_NO_SUB"},
@@ -131,20 +132,22 @@ func handler(ctx context.Context, event events.APIGatewayV2HTTPRequest) (events.
 
 		var isOwner bool = event.IsOwner
 
-		club := event_schema.Club{
-			ClubID: event.ClubID,
+		thumbnailUrl := "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0="
+
+		club := models.Club{
+			ID: event.ClubID,
 			// This is a placeholder thumbnail URL
 			// TODO: Get a new presigned URL when club profile images are implemented
-			ThumbnailUrl: "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=",
+			ThumbnailURL: &thumbnailUrl,
 		}
 
 		if !exists {
 			eventsToResponseEvent[event.EventID] = event_schema.ResponseSchema{
 				Event:       event.Event,
 				Description: event.Description,
-				OwnerSchema: event_schema.OwnerSchema{
-					Owner:      event_schema.Club{},
-					Associates: []event_schema.Club{},
+				EventOwners: models.EventOwners{
+					Owner:      models.Club{},
+					Associates: []models.Club{},
 				},
 			}
 		}

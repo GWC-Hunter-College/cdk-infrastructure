@@ -87,7 +87,11 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		DbName:                   databaseName,
 	}
 
+	authorizer := props.Authorizer
+
 	gateway_routes.TestRoutes(httpApi, stack)
+
+	gateway_routes.ClubRoutes(httpApi, stack, vpc, dbParams, authorizer)
 
 	gateway_routes.ClubImageRoutes(httpApi, stack, vpc, s3Params, dbParams)
 
@@ -95,9 +99,7 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 
 	gateway_routes.PublicEventRoutes(httpApi, stack, vpc, dbParams)
 
-	gateway_routes.ClubRoutes(httpApi, stack, vpc, dbParams)
-
-	gateway_routes.StudentMeRoutes(httpApi, stack, vpc, dbParams, props.Authorizer)
+	gateway_routes.StudentMeRoutes(httpApi, stack, vpc, dbParams, authorizer)
 	// gateway_routes.DatabaseRoutes(httpApi, stack, gateway_routes.DatabaseRouteProps{
 	// 	Vpc:                               props.Vpc,
 	// 	LambdaSecretsManagerSecurityGroup: props.LambdaSecretsManagerSecurityGroup,
