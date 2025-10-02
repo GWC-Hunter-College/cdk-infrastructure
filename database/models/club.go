@@ -14,6 +14,11 @@ const (
 	RoleOwner  ClubRole = "owner"
 )
 
+type ClubWithRole struct {
+	Club
+	ClubRole string `json:"role" db:"role"` // "owner" | "eboard" | "member"
+}
+
 type ClubDetailed struct {
 	Club
 	WebsiteURL  *string `db:"website_url" json:website_url`
