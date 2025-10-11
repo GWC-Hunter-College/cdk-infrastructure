@@ -276,6 +276,47 @@ func (qc *QueryClient) QueryMulti(queries []Query) (rows []*sqlx.Rows, err error
 	return rows, nil
 }
 
+// Execute multiple queries in sequence, each from their own file with optional args for placeholders in a transaction.
+// If any query fails, the transaction is aborted and rolled back.
+//
+// This method does NOT return any rows, meaning that this method should only be used
+// to execute statements that do not return rows (e.g. CREATE, INSERT, UPDATE, DELETE).
+func (qc *QueryClient) ExecMulti(queries []Query) (results []sql.Result, err error) {
+	tx, err := qc.Conn.Beginx()
+
+	if err != nil {
+		log.Printf("Error beginning transaction: %v", err)
+		return results, err
+	}
+
+	for _, query := range queries {
+		queryString, err := loadSQLFromFile(query.Filepath)
+		if err != nil {
+			log.Printf("Error loading SQL from file %s: %v", query.Filepath, err)
+			tx.Rollback()
+			return nil, err
+		}
+
+		result, err := tx.Exec(queryString, query.Args...)
+
+		if err != nil {
+			log.Printf("Error executing query from file %s: %v", query.Filepath, err)
+
+			tx.Rollback()
+
+			return results, err
+		}
+
+		log.Printf("Executed query from file: %s", query.Filepath)
+
+		results = append(results, result)
+	}
+
+	err = tx.Commit()
+
+	return results, nil
+}
+
 // Execute a SQL file that contains multiple statements (e.g. for migrations or bulk table creation).
 // Each statement is executed in sequence and atomically in a transaction.
 //
@@ -284,16 +325,18 @@ func (qc *QueryClient) QueryMulti(queries []Query) (rows []*sqlx.Rows, err error
 //
 // The verbose flag can be set to true to log each statement execution. Please note that this will log
 // everything, including sensitive information if the statements contain such information.
-func (qc *QueryClient) ExecuteFileBulk(filepath string, verbose bool) (results []sql.Result, err error) {
-	query, err := loadSQLFromFile(filepath)
+func (qc *QueryClient) ExecuteFileBulk(query Query) ([]sql.Result, error) {
+	queryString, err := loadSQLFromFile(query.Filepath)
 	if err != nil {
-		log.Printf("Error loading SQL from file %s: %v", filepath, err)
+		log.Printf("Error loading SQL from file %s: %v", query.Filepath, err)
 		return nil, err
 	}
 
+	var results = []sql.Result{}
+
 	tx, err := qc.Conn.Beginx()
 
-	statements := strings.Split(query, ";")
+	statements := strings.Split(queryString, ";")
 
 	for _, statement := range statements {
 		statement = strings.TrimSpace(statement)
@@ -301,7 +344,7 @@ func (qc *QueryClient) ExecuteFileBulk(filepath string, verbose bool) (results [
 			continue
 		}
 
-		result, err := qc.Conn.Exec(statement)
+		result, err := tx.Exec(statement)
 		if err != nil {
 			log.Printf("Error executing statement: %v", err)
 			tx.Rollback()
@@ -310,9 +353,7 @@ func (qc *QueryClient) ExecuteFileBulk(filepath string, verbose bool) (results [
 
 		results = append(results, result)
 
-		if verbose {
-			log.Printf("Executed statement: %s", statement)
-		}
+		log.Printf("Executed statement: %s", statement)
 	}
 
 	err = tx.Commit()

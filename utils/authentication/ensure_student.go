@@ -1,4 +1,4 @@
-package utils
+package authentication_utils
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 )
 
 var ErrNoSub = errors.New("jwt has no sub")
+var ErrNoAuthorizer = errors.New("Request context has no authorizer")
 
 // RequireStudent ensures a student row exists for this sub.
 // Return values (error):

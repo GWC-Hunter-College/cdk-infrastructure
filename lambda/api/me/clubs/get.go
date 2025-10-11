@@ -4,7 +4,7 @@ import (
 	// models "cdk-infrastructure/database/models"
 	"cdk-infrastructure/database/models"
 	gateway_helpers "cdk-infrastructure/gateway/helpers"
-	"cdk-infrastructure/lambda/internal/auth/utils"
+	authentication_utils "cdk-infrastructure/utils/authentication"
 	"cdk-infrastructure/utils/query_client"
 	"context"
 	"errors"
@@ -45,8 +45,8 @@ func handler(ctx context.Context, event events.APIGatewayV2HTTPRequest) (events.
 	email := claims["email"]
 
 	// Enforce/ensure student row exists (or create it); fail the request if this fails.
-	if err := utils.RequireStudent(ctx, qc, sub, email); err != nil {
-		if errors.Is(err, utils.ErrNoSub) {
+	if err := authentication_utils.RequireStudent(ctx, qc, sub, email); err != nil {
+		if errors.Is(err, authentication_utils.ErrNoSub) {
 			return gateway_helpers.NewClientErrorGatewayResponse(
 				"missing sub in JWT claims",
 				map[string]any{"code": "ERR_NO_SUB"},

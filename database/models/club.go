@@ -21,6 +21,6 @@ type ClubWithRole struct {
 
 type ClubDetailed struct {
 	Club
-	WebsiteURL  *string `db:"website_url" json:website_url`
+	WebsiteURL  *string `db:"website_url" json:"website_url"`
 	Description *string `db:"description" json:"description"`
 }
