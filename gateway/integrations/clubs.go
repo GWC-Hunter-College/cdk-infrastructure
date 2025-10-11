@@ -146,7 +146,7 @@ func PostNewClubEvent(
 	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("PostNewClubEventFunction"), &awscdklambdagoalpha.GoFunctionProps{
 		FunctionName: jsii.String("PostNewClubEvent"),
 		Description:  jsii.String("Post a new event to a specific club"),
-		Entry:        jsii.String("lambda/api/clubs/events/post.go"),
+		Entry:        jsii.String("lambda/api/clubs/clubId/events/post/post.go"),
 		Environment: &map[string]*string{
 			"DB_SECRET_ARN": arn,
 			"DB_HOST":       jsii.String(host),

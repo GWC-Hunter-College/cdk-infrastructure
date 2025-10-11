@@ -17,7 +17,7 @@ type Event struct {
 }
 
 type FullEvent struct {
-	Event       Event   `json:"event"`
+	Event
 	Description *string `json:"description,omitempty"`
 }
 
