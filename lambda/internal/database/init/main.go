@@ -29,7 +29,7 @@ import (
 	3. curl "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{}'
 */
 
-var databaseNames = []string{"staging", "production"}
+var databaseNames = []string{"STAGING", "PRODUCTION"}
 
 var initTableMigrationFiles = []string{
 	"09_08_2025_create_core_tables_up.sql",
@@ -45,7 +45,6 @@ var (
 	databaseName  string
 	secretLoadErr error
 	// host          string
-
 )
 
 func handler(ctx context.Context, event events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
@@ -170,8 +169,6 @@ func loadSecrets(ctx context.Context, arn string) {
 		// user, password, host = creds.User, creds.Pass, creds.Host
 		user, password = creds.User, creds.Pass
 	})
-
-	return
 }
 
 func connectToMySQL(user string, password string, dbName string, address string) (*sql.DB, error) {
@@ -181,7 +178,8 @@ func connectToMySQL(user string, password string, dbName string, address string)
 	dsn.DBName = dbName
 	dsn.Addr = address + ":3306"
 	dsn.Net = "tcp"
-	dsn.TLSConfig = "true"
+	// Turning this off for now to avoid cert issues. Should be ok since all traffic is within private VPC.
+	// dsn.TLSConfig = "true"
 
 	db, err := sql.Open("mysql", dsn.FormatDSN())
 	if err != nil {
