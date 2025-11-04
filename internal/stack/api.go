@@ -23,9 +23,7 @@ type ApiStackProps struct {
 	Vpc                               awsec2.Vpc
 	LambdaSecretsManagerSecurityGroup awsec2.SecurityGroup
 	LambdaSecurityGroup               awsec2.SecurityGroup
-	ProxySecurityGroup                awsec2.SecurityGroup
 	DbInstance                        awsrds.DatabaseInstance
-	DbProxy                           awsrds.DatabaseProxy
 
 	BucketName *string
 	Bucket     awss3.Bucket
@@ -62,7 +60,7 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 	productionStatus := strings.ToLower(os.Getenv("PRODUCTION_STATUS"))
 
 	if productionStatus == "true" {
-		databaseName = "PROD"
+		databaseName = "PRODUCTION"
 	} else {
 		databaseName = "STAGING"
 	}
@@ -80,10 +78,10 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 
 	dbParams := gateway_parameters.DatabaseConnectionParameters{
 		Secret:                   props.DbInstance.Secret(),
-		LambdaToProxySG:          props.LambdaSecurityGroup,
+		LambdaSG:                 props.LambdaSecurityGroup,
 		LambdaToSecretsManagerSG: props.LambdaSecretsManagerSecurityGroup,
 		DbInstance:               props.DbInstance,
-		DbHost:                   *props.DbProxy.Endpoint(),
+		DbHost:                   *props.DbInstance.DbInstanceEndpointAddress(),
 		DbName:                   databaseName,
 	}
 

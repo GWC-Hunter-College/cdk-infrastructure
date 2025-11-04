@@ -20,7 +20,7 @@ func GetClubsByVerification(
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
 	arn := dbParams.Secret.SecretArn()
-	lambdaToProxySG := dbParams.LambdaToProxySG
+	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
 	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetClubsByVerificationFunction"), &awscdklambdagoalpha.GoFunctionProps{
@@ -35,7 +35,7 @@ func GetClubsByVerification(
 		Vpc:     vpc,
 		Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
 		SecurityGroups: &[]awsec2.ISecurityGroup{
-			lambdaToProxySG,
+			lambdaSG,
 			lambdaToSecretsManagerSG,
 		},
 	})
@@ -60,7 +60,7 @@ func GetClubById(
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
 	arn := dbParams.Secret.SecretArn()
-	lambdaToProxySG := dbParams.LambdaToProxySG
+	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
 	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetClubByIdFunction"), &awscdklambdagoalpha.GoFunctionProps{
@@ -75,7 +75,7 @@ func GetClubById(
 		Vpc:     vpc,
 		Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
 		SecurityGroups: &[]awsec2.ISecurityGroup{
-			lambdaToProxySG,
+			lambdaSG,
 			lambdaToSecretsManagerSG,
 		},
 	})
@@ -100,7 +100,7 @@ func GetClubEventsByPeriod(
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
 	arn := dbParams.Secret.SecretArn()
-	lambdaToProxySG := dbParams.LambdaToProxySG
+	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
 	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetClubEventsByPeriodFunction"), &awscdklambdagoalpha.GoFunctionProps{
@@ -115,7 +115,7 @@ func GetClubEventsByPeriod(
 		Vpc:     vpc,
 		Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
 		SecurityGroups: &[]awsec2.ISecurityGroup{
-			lambdaToProxySG,
+			lambdaSG,
 			lambdaToSecretsManagerSG,
 		},
 	})
@@ -140,7 +140,7 @@ func PostNewClubEvent(
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
 	arn := dbParams.Secret.SecretArn()
-	lambdaToProxySG := dbParams.LambdaToProxySG
+	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
 	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("PostNewClubEventFunction"), &awscdklambdagoalpha.GoFunctionProps{
@@ -155,7 +155,7 @@ func PostNewClubEvent(
 		Vpc:     vpc,
 		Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
 		SecurityGroups: &[]awsec2.ISecurityGroup{
-			lambdaToProxySG,
+			lambdaSG,
 			lambdaToSecretsManagerSG,
 		},
 	})
@@ -164,6 +164,45 @@ func PostNewClubEvent(
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
 		jsii.String("PostNewClubEventIntegration"),
+		function,
+		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
+	)
+
+	return integration
+}
+
+func PostNewClub(
+	stack awscdk.Stack,
+	vpc awsec2.IVpc,
+	dbParams gateway_parameters.DatabaseConnectionParameters,
+) awsapigatewayv2integrations.HttpLambdaIntegration {
+	host := dbParams.DbHost
+	dbName := dbParams.DbName
+	arn := dbParams.Secret.SecretArn()
+	lambdaSG := dbParams.LambdaSG
+	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
+
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("CreateNewClubFunction"), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("CreateNewClubFunction"),
+		Description:  jsii.String("Create a new club"),
+		Entry:        jsii.String("lambda/api/clubs/post/post.go"),
+		Environment: &map[string]*string{
+			"DB_SECRET_ARN": arn,
+			"DB_HOST":       jsii.String(host),
+			"DB_NAME":       jsii.String(dbName),
+		},
+		Vpc:     vpc,
+		Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
+		SecurityGroups: &[]awsec2.ISecurityGroup{
+			lambdaSG,
+			lambdaToSecretsManagerSG,
+		},
+	})
+
+	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
+
+	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
+		jsii.String("CreateNewClubIntegration"),
 		function,
 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 	)

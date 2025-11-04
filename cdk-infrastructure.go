@@ -68,7 +68,6 @@ func main() {
 		LambdaSecretsManagerSecurityGroup: network.LambdaSecretsManagerSecurityGroup,
 		DbInstance:                        database.DbInstance,
 		LambdaSecurityGroup:               database.LambdaSecurityGroup,
-		ProxyEndpoint:                     database.Proxy.Endpoint(),
 
 		UserPool:  authentication.UserPool,
 		AppClient: authentication.AppClient,
@@ -81,10 +80,8 @@ func main() {
 
 		Vpc:                               network.Vpc,
 		LambdaSecretsManagerSecurityGroup: network.LambdaSecretsManagerSecurityGroup,
-		ProxySecurityGroup:                database.ProxySecurityGroup,
 		LambdaSecurityGroup:               database.LambdaSecurityGroup,
 		DbInstance:                        database.DbInstance,
-		DbProxy:                           database.Proxy,
 
 		Bucket: image.Bucket,
 
@@ -117,7 +114,6 @@ func main() {
 		LambdaSecretsManagerSecurityGroup: network.LambdaSecretsManagerSecurityGroup,
 		LambdaSecurityGroup:               database.LambdaSecurityGroup,
 		DbInstance:                        database.DbInstance,
-		Proxy:                             database.Proxy,
 	})
 
 	app.Synth(nil)

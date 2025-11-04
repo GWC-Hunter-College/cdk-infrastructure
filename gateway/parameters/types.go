@@ -9,7 +9,7 @@ import (
 
 type DatabaseConnectionParameters struct {
 	Secret                   awssecretsmanager.ISecret
-	LambdaToProxySG          awsec2.ISecurityGroup
+	LambdaSG                 awsec2.ISecurityGroup
 	LambdaToSecretsManagerSG awsec2.ISecurityGroup
 	DbHost                   string
 	DbInstance               awsrds.DatabaseInstance

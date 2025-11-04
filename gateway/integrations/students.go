@@ -20,7 +20,7 @@ func GetStudentMeBySub(
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
 	arn := dbParams.Secret.SecretArn()
-	lambdaToProxySG := dbParams.LambdaToProxySG
+	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
 	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetStudentMeFunction"), &awscdklambdagoalpha.GoFunctionProps{
@@ -35,7 +35,7 @@ func GetStudentMeBySub(
 		Vpc:     vpc,
 		Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
 		SecurityGroups: &[]awsec2.ISecurityGroup{
-			lambdaToProxySG,
+			lambdaSG,
 			lambdaToSecretsManagerSG,
 		},
 	})
@@ -60,7 +60,7 @@ func GetMyClubs(
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
 	arn := dbParams.Secret.SecretArn()
-	lambdaToProxySG := dbParams.LambdaToProxySG
+	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
 	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetMyClubsFunction"), &awscdklambdagoalpha.GoFunctionProps{
@@ -75,7 +75,7 @@ func GetMyClubs(
 		Vpc:     vpc,
 		Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
 		SecurityGroups: &[]awsec2.ISecurityGroup{
-			lambdaToProxySG,
+			lambdaSG,
 			lambdaToSecretsManagerSG,
 		},
 	})
@@ -100,7 +100,7 @@ func GetMyEvents(
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
 	arn := dbParams.Secret.SecretArn()
-	lambdaToProxySG := dbParams.LambdaToProxySG
+	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
 	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetMyEventsFunction"), &awscdklambdagoalpha.GoFunctionProps{
@@ -115,7 +115,7 @@ func GetMyEvents(
 		Vpc:     vpc,
 		Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
 		SecurityGroups: &[]awsec2.ISecurityGroup{
-			lambdaToProxySG,
+			lambdaSG,
 			lambdaToSecretsManagerSG,
 		},
 	})

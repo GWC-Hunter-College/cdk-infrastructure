@@ -32,8 +32,7 @@ import (
 var databaseNames = []string{"STAGING", "PRODUCTION"}
 
 var initTableMigrationFiles = []string{
-	"09_08_2025_create_core_tables_up.sql",
-	"07_11_2025_create_member_form_migration_table_up.sql",
+	"11_04_2025_create_core_tables_up.sql",
 }
 
 var initDatabaseMigrationFile = "07_11_2025_create_databases_up.sql"
@@ -93,7 +92,7 @@ func initDatabase(ctx context.Context) error {
 		return err
 	}
 
-	// Run migrations to create all tables in staging
+	// Run migrations to create all tables
 	for _, dbName := range databaseNames {
 		log.Printf("Attempting to connect to database: %s", dbName)
 

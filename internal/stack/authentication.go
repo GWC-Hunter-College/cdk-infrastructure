@@ -72,7 +72,7 @@ func NewAuthenticationStack(scope constructs.Construct, id string, props *Authen
 
 	domain := userPool.AddDomain(jsii.String("CognitoDomain"), &awscognito.UserPoolDomainOptions{
 		CognitoDomain: &awscognito.CognitoDomainOptions{
-			DomainPrefix: jsii.String("event-manager-auth"),
+			DomainPrefix: jsii.String("event-manager-authz"),
 		},
 	})
 

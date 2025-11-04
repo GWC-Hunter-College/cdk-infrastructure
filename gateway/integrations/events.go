@@ -20,7 +20,7 @@ func GetEventsByPeriod(
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
 	arn := dbParams.Secret.SecretArn()
-	lambdaToProxySG := dbParams.LambdaToProxySG
+	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
 	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetEventsByPeriodFunction"), &awscdklambdagoalpha.GoFunctionProps{
@@ -35,7 +35,7 @@ func GetEventsByPeriod(
 		Vpc:     vpc,
 		Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
 		SecurityGroups: &[]awsec2.ISecurityGroup{
-			lambdaToProxySG,
+			lambdaSG,
 			lambdaToSecretsManagerSG,
 		},
 	})
@@ -60,7 +60,7 @@ func GetEventById(
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
 	arn := dbParams.Secret.SecretArn()
-	lambdaToProxySG := dbParams.LambdaToProxySG
+	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
 	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetEventByIdFunction"), &awscdklambdagoalpha.GoFunctionProps{
@@ -75,7 +75,7 @@ func GetEventById(
 		Vpc:     vpc,
 		Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
 		SecurityGroups: &[]awsec2.ISecurityGroup{
-			lambdaToProxySG,
+			lambdaSG,
 			lambdaToSecretsManagerSG,
 		},
 	})

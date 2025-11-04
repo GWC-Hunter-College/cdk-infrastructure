@@ -49,16 +49,21 @@ func loadSecrets(ctx context.Context, arn string) (*databaseCredentials, error) 
 
 func loadSQLFromFile(filepath string) (string, error) {
 	file, err := queriesDir.Open(filepath)
-	defer file.Close()
 
 	if err != nil {
 		log.Printf("Error opening SQL file: %v", err)
-
 		return "", err
 	}
 
+	defer file.Close()
+
 	fileBytes := make([]byte, 4096)
-	file.Read(fileBytes)
+	_, err = file.Read(fileBytes)
+
+	if err != nil {
+		log.Printf("Error reading SQL file: %v", err)
+		return "", err
+	}
 
 	return string(fileBytes), nil
 }

@@ -23,7 +23,7 @@ func GetEventImagesIntegration(
 	dbHost := jsii.String(dbParams.DbHost)
 	dbName := jsii.String(dbParams.DbName)
 
-	lambdaToProxySG := dbParams.LambdaToProxySG
+	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsSG := dbParams.LambdaToSecretsManagerSG
 
 	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetEventImagesPresignFunction"), &awscdklambdagoalpha.GoFunctionProps{
@@ -37,7 +37,7 @@ func GetEventImagesIntegration(
 		},
 		Vpc: vpc,
 		SecurityGroups: &[]awsec2.ISecurityGroup{
-			lambdaToProxySG,
+			lambdaSG,
 			lambdaToSecretsSG,
 		},
 		Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
@@ -82,7 +82,7 @@ func ConfirmEventImagesIntegration(
 	dbHost := jsii.String(dbParams.DbHost)
 	dbName := jsii.String(dbParams.DbName)
 
-	lambdaToProxySG := dbParams.LambdaToProxySG
+	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsSG := dbParams.LambdaToSecretsManagerSG
 
 	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("ConfirmEventImagesFunction"), &awscdklambdagoalpha.GoFunctionProps{
@@ -95,7 +95,7 @@ func ConfirmEventImagesIntegration(
 		},
 		Vpc: vpc,
 		SecurityGroups: &[]awsec2.ISecurityGroup{
-			lambdaToProxySG,
+			lambdaSG,
 			lambdaToSecretsSG,
 		},
 		Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
