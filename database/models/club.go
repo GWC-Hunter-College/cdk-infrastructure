@@ -1,9 +1,9 @@
 package models
 
 type Club struct {
-	ID           int     `json:"id" db:"id"`
-	Name         string  `json:"name" db:"name"`
-	ThumbnailURL *string `json:"thumbnailUrl,omitempty" db:"thumbnail_url"`
+	ID           int     `json:"id,omitempty" db:"id"`
+	Name         string  `json:"name" db:"name" validate:"required"`
+	ThumbnailURL *string `json:"thumbnailUrl,omitempty" db:"thumbnail_url" validate:"required"`
 }
 
 type ClubRole string
