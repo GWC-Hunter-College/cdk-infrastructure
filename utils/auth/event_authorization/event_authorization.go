@@ -1,4 +1,4 @@
-package event_authorization
+package authentication_utils
 
 import (
 	"context"

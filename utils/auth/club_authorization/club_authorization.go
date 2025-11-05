@@ -1,4 +1,4 @@
-package club_authorization
+package authentication_utils
 
 import (
 	"context"
