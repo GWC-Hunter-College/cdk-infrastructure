@@ -4,7 +4,6 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2" // core
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsrds"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awssecretsmanager"
 	"github.com/aws/jsii-runtime-go"
 
 	"github.com/aws/constructs-go/constructs/v10"
@@ -36,33 +35,33 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 
 	vpc := props.Vpc
 
-	proxySecurityGroup := createSecurityGroup(stack, vpc, "proxy")
+	// proxySecurityGroup := createSecurityGroup(stack, vpc, "proxy")
 	lambdaSecurityGroup := createSecurityGroup(stack, vpc, "lambda")
 	dbSecurityGroup := createSecurityGroup(stack, vpc, "rds-db")
 
 	lambdaSecurityGroup.AddEgressRule(
-		proxySecurityGroup,
-		awsec2.Port_Tcp(jsii.Number(3306)),
-		jsii.String("Allow connections to the proxy"),
-		jsii.Bool(false),
-	)
-	proxySecurityGroup.AddIngressRule(
-		lambdaSecurityGroup,
-		awsec2.Port_Tcp(jsii.Number(3306)),
-		jsii.String("Allow connections from lambda"),
-		jsii.Bool(false),
-	)
-
-	proxySecurityGroup.AddEgressRule(
 		dbSecurityGroup,
 		awsec2.Port_Tcp(jsii.Number(3306)),
-		jsii.String("Allow connections to the database (RDS)."),
+		jsii.String("Allow connections to the database"),
 		jsii.Bool(false),
 	)
+	// proxySecurityGroup.AddIngressRule(
+	// 	lambdaSecurityGroup,
+	// 	awsec2.Port_Tcp(jsii.Number(3306)),
+	// 	jsii.String("Allow connections from lambda"),
+	// 	jsii.Bool(false),
+	// )
+
+	// proxySecurityGroup.AddEgressRule(
+	// 	dbSecurityGroup,
+	// 	awsec2.Port_Tcp(jsii.Number(3306)),
+	// 	jsii.String("Allow connections to the database (RDS)."),
+	// 	jsii.Bool(false),
+	// )
 	dbSecurityGroup.AddIngressRule(
-		proxySecurityGroup,
+		lambdaSecurityGroup,
 		awsec2.Port_Tcp(jsii.Number(3306)),
-		jsii.String("Allow connections from the proxy"),
+		jsii.String("Allow connections from the lambdas"),
 		jsii.Bool(false),
 	)
 
@@ -85,23 +84,24 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 		DeletionProtection:  jsii.Bool(false),
 	})
 
-	proxy := awsrds.NewDatabaseProxy(stack, jsii.String("ClubEventProxy"), &awsrds.DatabaseProxyProps{
-		ProxyTarget:       awsrds.ProxyTarget_FromInstance(dbInstance),
-		Secrets:           &[]awssecretsmanager.ISecret{dbInstance.Secret()},
-		Vpc:               vpc,
-		RequireTLS:        jsii.Bool(true),
-		SecurityGroups:    &[]awsec2.ISecurityGroup{proxySecurityGroup},
-		IdleClientTimeout: awscdk.Duration_Minutes(jsii.Number(30)),
-	})
+	// Saving costs
+	// proxy := awsrds.NewDatabaseProxy(stack, jsii.String("ClubEventProxy"), &awsrds.DatabaseProxyProps{
+	// 	ProxyTarget:       awsrds.ProxyTarget_FromInstance(dbInstance),
+	// 	Secrets:           &[]awssecretsmanager.ISecret{dbInstance.Secret()},
+	// 	Vpc:               vpc,
+	// 	RequireTLS:        jsii.Bool(true),
+	// 	SecurityGroups:    &[]awsec2.ISecurityGroup{proxySecurityGroup},
+	// 	IdleClientTimeout: awscdk.Duration_Minutes(jsii.Number(30)),
+	// })
 
 	return &DatabaseStack{
 		Stack: stack,
 
 		DbInstance: dbInstance,
-		Proxy:      proxy,
+		// Proxy:      proxy,
 
 		DbSecurityGroup:     dbSecurityGroup,
 		LambdaSecurityGroup: lambdaSecurityGroup,
-		ProxySecurityGroup:  proxySecurityGroup,
+		// ProxySecurityGroup:  proxySecurityGroup,
 	}
 }

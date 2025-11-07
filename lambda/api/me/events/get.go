@@ -6,7 +6,7 @@ import (
 	"cdk-infrastructure/database/models"
 	gateway_helpers "cdk-infrastructure/gateway/helpers"
 	event_schema "cdk-infrastructure/lambda/api/events/schema"
-	authentication_utils "cdk-infrastructure/utils/authentication"
+	authentication_utils "cdk-infrastructure/utils/auth"
 	"cdk-infrastructure/utils/query_client"
 	"context"
 	"errors"

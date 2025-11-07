@@ -27,9 +27,8 @@ type AuthorizationStackProps struct {
 
 	Vpc                               awsec2.Vpc
 	LambdaSecretsManagerSecurityGroup awsec2.SecurityGroup
-	DbInstance                        awsrds.DatabaseInstance
-	ProxyEndpoint                     *string
 	LambdaSecurityGroup               awsec2.SecurityGroup
+	DbInstance                        awsrds.DatabaseInstance
 
 	UserPool  awscognito.IUserPool
 	AppClient awscognito.IUserPoolClient
@@ -52,7 +51,6 @@ func NewAuthorizationStack(scope constructs.Construct, id string, props *Authori
 	//  =======================================
 	vpc := props.Vpc
 	dbInstance := props.DbInstance
-	proxyEndpoint := props.ProxyEndpoint
 
 	lambdaSecretsManagerSecurityGroup := props.LambdaSecretsManagerSecurityGroup
 	lambdaSecurityGroup := props.LambdaSecurityGroup
@@ -79,7 +77,7 @@ func NewAuthorizationStack(scope constructs.Construct, id string, props *Authori
 		Entry:        jsii.String("./lambda/internal/auth/postConfirm/upsert.go"),
 		Environment: &map[string]*string{
 			"DB_SECRET_ARN": dbInstance.Secret().SecretArn(),
-			"DB_HOST":       jsii.String(*proxyEndpoint),
+			"DB_HOST":       jsii.String(*dbInstance.DbInstanceEndpointAddress()),
 			"DB_NAME":       jsii.String(databaseName),
 		},
 		Vpc:     vpc,

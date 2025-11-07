@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
-	"strings"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -60,7 +59,7 @@ func NewClient(ctx context.Context, dbSecretArn string, dbName string) (*QueryCl
 	dsn.Passwd = creds.password
 	dsn.Addr = creds.address
 	dsn.Net = "tcp"
-	dsn.TLSConfig = "true"
+	// dsn.TLSConfig = "true"
 
 	conn, err := sqlx.Connect("mysql", dsn.FormatDSN())
 
@@ -317,6 +316,8 @@ func (qc *QueryClient) ExecMulti(queries []Query) (results []sql.Result, err err
 	return results, nil
 }
 
+// DO NOT USE THIS METHOD. IT DOES NOT WORK PROPERLY.
+//
 // Execute a SQL file that contains multiple statements (e.g. for migrations or bulk table creation).
 // Each statement is executed in sequence and atomically in a transaction.
 //
@@ -325,6 +326,7 @@ func (qc *QueryClient) ExecMulti(queries []Query) (results []sql.Result, err err
 //
 // The verbose flag can be set to true to log each statement execution. Please note that this will log
 // everything, including sensitive information if the statements contain such information.
+/*
 func (qc *QueryClient) ExecuteFileBulk(query Query) ([]sql.Result, error) {
 	queryString, err := loadSQLFromFile(query.Filepath)
 	if err != nil {
@@ -364,6 +366,7 @@ func (qc *QueryClient) ExecuteFileBulk(query Query) ([]sql.Result, error) {
 
 	return results, nil
 }
+*/
 
 func (qc *QueryClient) Close() error {
 	return qc.Conn.Close()

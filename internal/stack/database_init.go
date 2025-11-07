@@ -4,6 +4,7 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awslogs"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsrds"
 	"github.com/aws/aws-cdk-go/awscdk/v2/customresources"
 	"github.com/aws/constructs-go/constructs/v10"
@@ -17,7 +18,6 @@ type Props struct {
 	DbInstance                        awsrds.DatabaseInstance
 	LambdaSecretsManagerSecurityGroup awsec2.SecurityGroup
 	LambdaSecurityGroup               awsec2.SecurityGroup
-	Proxy                             awsrds.DatabaseProxy
 }
 
 func NewDatabaseInitStack(scope constructs.Construct, id string, props *Props) {
@@ -30,9 +30,8 @@ func NewDatabaseInitStack(scope constructs.Construct, id string, props *Props) {
 	lambdaSecretsManagerSecurityGroup := props.LambdaSecretsManagerSecurityGroup
 	lambdaSecurityGroup := props.LambdaSecurityGroup
 	dbInstance := props.DbInstance
-	proxy := props.Proxy
 	vpc := props.Vpc
-	proxyEndpoint := proxy.Endpoint()
+	endpoint := dbInstance.DbInstanceEndpointAddress()
 
 	initRDSFunc := awslambda.NewDockerImageFunction(stack, jsii.String("RDS Init Function"),
 		&awslambda.DockerImageFunctionProps{
@@ -44,14 +43,18 @@ func NewDatabaseInitStack(scope constructs.Construct, id string, props *Props) {
 			Architecture: awslambda.Architecture_X86_64(),
 			Environment: &map[string]*string{
 				"DB_SECRET_ARN": dbInstance.Secret().SecretArn(),
-				"DB_HOST":       proxyEndpoint,
+				"DB_HOST":       endpoint,
 			},
 			Vpc: vpc,
 			SecurityGroups: &[]awsec2.ISecurityGroup{
 				lambdaSecretsManagerSecurityGroup,
 				lambdaSecurityGroup,
 			},
-			AllowPublicSubnet: jsii.Bool(true),
+			LogGroup: awslogs.NewLogGroup(stack, jsii.String("DatabaseInitLogGroup"), &awslogs.LogGroupProps{
+				LogGroupName:  jsii.String("Database Initializer Logs"),
+				LogGroupClass: awslogs.LogGroupClass_STANDARD,
+				Retention:     awslogs.RetentionDays_ONE_WEEK,
+			}),
 		},
 	)
 
