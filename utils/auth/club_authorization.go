@@ -1,19 +1,17 @@
 package authentication_utils
 
 import (
-	"context"
 	"errors"
 
 	"cdk-infrastructure/utils/query_client"
 )
 
 var (
-	ErrNoSub   = errors.New("empty sub")
 	ErrBadClub = errors.New("invalid club id")
 )
 
 // AuthorizerStudent returns true if the student is eboard/owner for the given club.
-func AuthorizeStudentClub(ctx context.Context, qc *query_client.QueryClient, sub string, clubId int) (bool, error) {
+func AuthorizeStudentClub(qc *query_client.QueryClient, sub string, clubId int) (bool, error) {
 	if sub == "" {
 		return false, ErrNoSub
 	}

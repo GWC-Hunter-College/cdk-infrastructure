@@ -8,7 +8,6 @@ import (
 )
 
 var (
-	ErrNoSub    = errors.New("empty sub")
 	ErrBadEvent = errors.New("invalid event id")
 )
 
