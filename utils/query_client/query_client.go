@@ -330,11 +330,11 @@ func (qc *QueryClient) ExecMulti(queries []Query) (results []sql.Result, err err
 // Therefore, this method expects len(queries) == len(needId) + 1.
 func (qc *QueryClient) ExecInsertQuery(queries []Query, needId []bool) (lastInsertId int64, err error) {
 	if len(queries) == 0 {
-		return 0, errors.New("IndexError: No queries provided")
+		return 0, errors.New("no queries provided")
 	}
 
 	if len(queries) != len(needId)+1 {
-		return 0, errors.New("IndexError: Length of queries and needId must be the same")
+		return 0, errors.New("length of queries and needId must be the same")
 	}
 
 	tx, err := qc.Conn.Beginx()
@@ -375,11 +375,14 @@ func (qc *QueryClient) ExecInsertQuery(queries []Query, needId []bool) (lastInse
 			return 0, err
 		}
 
+		var args []any
 		if needId[i] {
-			query.Args = append([]any{lastInsertId}, query.Args...)
+			args = append([]any{lastInsertId}, query.Args...)
+		} else {
+			args = query.Args
 		}
 
-		_, err = tx.Exec(queryString, query.Args...)
+		_, err = tx.Exec(queryString, args...)
 
 		if err != nil {
 			log.Printf("Error executing query from file %s: %v", query.Filepath, err)
