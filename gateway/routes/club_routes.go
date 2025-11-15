@@ -58,4 +58,13 @@ func ClubRoutes(
 		Authorizer:  authorizer,
 	})
 
+	// POST /clubs
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path: jsii.String("/clubs"),
+		Methods: &[]awsapigatewayv2.HttpMethod{
+			awsapigatewayv2.HttpMethod_POST,
+		},
+		Integration: integrations.PostNewClub(stack, vpc, dbParams),
+		Authorizer:  authorizer,
+	})
 }
