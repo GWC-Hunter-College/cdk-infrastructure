@@ -28,7 +28,7 @@ func NewNetworkStack(scope constructs.Construct, id string, props *NetworkStackP
 
 	vpc := awsec2.NewVpc(stack, jsii.String("vpc"), &awsec2.VpcProps{
 		IpAddresses:                  awsec2.IpAddresses_Cidr(jsii.String(CIDR)),
-		MaxAzs:                       jsii.Number(2),
+		MaxAzs:                       jsii.Number(1),
 		NatGateways:                  jsii.Number(0),
 		RestrictDefaultSecurityGroup: jsii.Bool(true),
 		SubnetConfiguration: &[]*awsec2.SubnetConfiguration{
