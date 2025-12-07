@@ -16,14 +16,20 @@ import (
 //
 // GET /events?startDate={startDate}&endDate={endDate}
 // GET /events/{eventId}
-func PublicEventRoutes(httpApi awsapigatewayv2.HttpApi, stack awscdk.Stack, vpc awsec2.Vpc, dbParams gateway_parameters.DatabaseConnectionParameters) {
+func PublicEventRoutes(
+	httpApi awsapigatewayv2.HttpApi,
+	stack awscdk.Stack,
+	vpc awsec2.Vpc,
+	dbParams gateway_parameters.DatabaseConnectionParameters,
+	deploymentTarget string,
+) {
 	// /events?startDate={startDate}&endDate={endDate}
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path: jsii.String("/events"),
 		Methods: &[]awsapigatewayv2.HttpMethod{
 			awsapigatewayv2.HttpMethod_GET,
 		},
-		Integration: integrations.GetEventsByPeriod(stack, vpc, dbParams),
+		Integration: integrations.GetEventsByPeriod(stack, vpc, dbParams, deploymentTarget),
 	})
 
 	// /events/{eventId}
@@ -32,6 +38,6 @@ func PublicEventRoutes(httpApi awsapigatewayv2.HttpApi, stack awscdk.Stack, vpc 
 		Methods: &[]awsapigatewayv2.HttpMethod{
 			awsapigatewayv2.HttpMethod_GET,
 		},
-		Integration: integrations.GetEventById(stack, vpc, dbParams),
+		Integration: integrations.GetEventById(stack, vpc, dbParams, deploymentTarget),
 	})
 }

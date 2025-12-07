@@ -1,6 +1,7 @@
 package integrations
 
 import (
+	gateway_helpers "cdk-infrastructure/gateway/helpers"
 	gateway_parameters "cdk-infrastructure/gateway/parameters"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2"
@@ -46,11 +47,12 @@ func PostEventThumbnailsIntegration(
 	stack awscdk.Stack,
 	vpc awsec2.IVpc,
 	s3Params gateway_parameters.S3PermissionsParameters,
-) (awsapigatewayv2integrations.HttpLambdaIntegration, awscdklambdagoalpha.GoFunction) {
+	deploymentTarget string,
+) awsapigatewayv2integrations.HttpLambdaIntegration {
 	bucket := s3Params.Bucket
 
-	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("PostEventThumbnailsPresignFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("PostClubEventThumbnailsPostPresign"),
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("PostEventThumbnailsPresignFunction"+deploymentTarget), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("PostClubEventThumbnailsPostPresign" + deploymentTarget),
 		Entry:        jsii.String("lambda/api/clubs/events/thumbnails/post/post.go"),
 		Environment: &map[string]*string{
 			"S3_BUCKET": bucket.BucketName(),
@@ -58,11 +60,13 @@ func PostEventThumbnailsIntegration(
 		Vpc: vpc,
 	})
 
+	gateway_helpers.GrantS3AccessToLambda(function, bucket, "events/*/thumbnails/*", false, true)
+
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
-		jsii.String("PostEventThumbnailsPresignIntegration"),
+		jsii.String("PostEventThumbnailsPresignIntegration"+deploymentTarget),
 		function,
 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 	)
 
-	return integration, function
+	return integration
 }

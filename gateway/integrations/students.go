@@ -16,6 +16,7 @@ func GetStudentMeBySub(
 	stack awscdk.Stack,
 	vpc awsec2.IVpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
+	deploymentTarget string,
 ) awsapigatewayv2integrations.HttpLambdaIntegration {
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
@@ -23,8 +24,8 @@ func GetStudentMeBySub(
 	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
-	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetStudentMeFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("GetStudentMe"),
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetStudentMeFunction"+deploymentTarget), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("GetStudentMe" + deploymentTarget),
 		Description:  jsii.String("Returns the student data associated with the sub from jwt"),
 		Entry:        jsii.String("./lambda/api/me/get.go"),
 		Environment: &map[string]*string{
@@ -43,7 +44,7 @@ func GetStudentMeBySub(
 	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
-		jsii.String("GetStudentMeIntegration"),
+		jsii.String("GetStudentMeIntegration"+deploymentTarget),
 		function,
 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 	)
@@ -56,6 +57,7 @@ func GetMyClubs(
 	stack awscdk.Stack,
 	vpc awsec2.IVpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
+	deploymentTarget string,
 ) awsapigatewayv2integrations.HttpLambdaIntegration {
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
@@ -63,8 +65,8 @@ func GetMyClubs(
 	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
-	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetMyClubsFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("GetMyClubs"),
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetMyClubsFunction"+deploymentTarget), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("GetMyClubs" + deploymentTarget),
 		Description:  jsii.String("Returns clubs of the student of asoociated jwt"),
 		Entry:        jsii.String("lambda/api/me/clubs/get.go"),
 		Environment: &map[string]*string{
@@ -83,7 +85,7 @@ func GetMyClubs(
 	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
-		jsii.String("GetMyClubsIntegration"),
+		jsii.String("GetMyClubsIntegration"+deploymentTarget),
 		function,
 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 	)
@@ -96,6 +98,7 @@ func GetMyEvents(
 	stack awscdk.Stack,
 	vpc awsec2.IVpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
+	deploymentTarget string,
 ) awsapigatewayv2integrations.HttpLambdaIntegration {
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
@@ -103,8 +106,8 @@ func GetMyEvents(
 	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
-	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetMyEventsFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("GetMyEvents"),
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetMyEventsFunction"+deploymentTarget), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("GetMyEvents" + deploymentTarget),
 		Description:  jsii.String("Returns events from clubs that a user has joined"),
 		Entry:        jsii.String("lambda/api/me/events/get.go"),
 		Environment: &map[string]*string{
@@ -123,7 +126,7 @@ func GetMyEvents(
 	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
-		jsii.String("GetMyEventsIntegration"),
+		jsii.String("GetMyEventsIntegration"+deploymentTarget),
 		function,
 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 	)

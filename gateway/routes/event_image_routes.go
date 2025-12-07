@@ -1,7 +1,6 @@
 package gateway_routes
 
 import (
-	gateway_helpers "cdk-infrastructure/gateway/helpers"
 	"cdk-infrastructure/gateway/integrations"
 	gateway_parameters "cdk-infrastructure/gateway/parameters"
 
@@ -30,62 +29,46 @@ func EventImageRoutes(
 	vpc awsec2.Vpc,
 	s3Params gateway_parameters.S3PermissionsParameters,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
+	deploymentTarget string,
 ) {
-	dbInstance := dbParams.DbInstance
-	dbSecret := dbParams.Secret
-	bucket := s3Params.Bucket
-
 	/// Event Images
 	// GET /clubs/{clubId}/events/{eventId}/images
-	getEventImagesInt, getEventImagesFn := integrations.GetEventImagesIntegration(stack, vpc, s3Params, dbParams)
-	gateway_helpers.GrantRdsAccessToLambda(getEventImagesFn, dbInstance, dbSecret)
-	gateway_helpers.GrantS3AccessToLambda(getEventImagesFn, bucket, "events/*", true, false)
-
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path: jsii.String("/clubs/{clubId}/events/{eventId}/images"),
 		Methods: &[]awsapigatewayv2.HttpMethod{
 			awsapigatewayv2.HttpMethod_GET,
 		},
-		Integration: getEventImagesInt,
+		Integration: integrations.GetEventImagesIntegration(stack, vpc, s3Params, dbParams, deploymentTarget),
 	})
 
 	// POST /clubs/{clubId}/events/{eventId}/images
-	postEventImagesInt, postEventImagesFn := integrations.PostEventImagesIntegration(stack, vpc, s3Params)
-	gateway_helpers.GrantS3AccessToLambda(postEventImagesFn, bucket, "events/*", false, true)
-
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path: jsii.String("/clubs/{clubId}/events/{eventId}/images"),
 		Methods: &[]awsapigatewayv2.HttpMethod{
 			awsapigatewayv2.HttpMethod_POST,
 			awsapigatewayv2.HttpMethod_OPTIONS,
 		},
-		Integration: postEventImagesInt,
+		Integration: integrations.PostEventImagesIntegration(stack, vpc, s3Params, deploymentTarget),
 	})
 
 	// POST /clubs/{clubId}/events/{eventId}/images/confirm
-	confirmEventImagesInt, confirmEventImagesFn := integrations.ConfirmEventImagesIntegration(stack, vpc, dbParams)
-	gateway_helpers.GrantRdsAccessToLambda(confirmEventImagesFn, dbInstance, dbSecret)
-
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path: jsii.String("/clubs/{clubId}/events/{eventId}/images/confirm"),
 		Methods: &[]awsapigatewayv2.HttpMethod{
 			awsapigatewayv2.HttpMethod_POST,
 			awsapigatewayv2.HttpMethod_OPTIONS,
 		},
-		Integration: confirmEventImagesInt,
+		Integration: integrations.ConfirmEventImagesIntegration(stack, vpc, dbParams, deploymentTarget),
 	})
 
 	// Event Thumbnails
 	// POST /clubs/{clubId}/events/{eventId}/thumbnails
-	postEventThumbnailsInt, postEventImagesFn := integrations.PostEventThumbnailsIntegration(stack, vpc, s3Params)
-	gateway_helpers.GrantS3AccessToLambda(postEventImagesFn, bucket, "events/*/thumbnails/*", false, true)
-
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path: jsii.String("/clubs/{clubId}/events/{eventId}/thumbnails"),
 		Methods: &[]awsapigatewayv2.HttpMethod{
 			awsapigatewayv2.HttpMethod_POST,
 			awsapigatewayv2.HttpMethod_OPTIONS,
 		},
-		Integration: postEventThumbnailsInt,
+		Integration: integrations.PostEventThumbnailsIntegration(stack, vpc, s3Params, deploymentTarget),
 	})
 }

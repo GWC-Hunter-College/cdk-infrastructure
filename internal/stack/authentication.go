@@ -81,8 +81,6 @@ func NewAuthenticationStack(scope constructs.Construct, id string, props *Authen
 		Value: domain.BaseUrl(&awscognito.BaseUrlOptions{}),
 	})
 
-	//
-
 	googleProvider := awscognito.NewUserPoolIdentityProviderGoogle(stack, jsii.String("GoogleIdP"), &awscognito.UserPoolIdentityProviderGoogleProps{
 		UserPool:     userPool,
 		ClientId:     jsii.String(os.Getenv("GOOGLE_CLIENT_ID")),
