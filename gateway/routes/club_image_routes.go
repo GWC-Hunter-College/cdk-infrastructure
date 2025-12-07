@@ -22,6 +22,7 @@ func ClubImageRoutes(
 	vpc awsec2.Vpc,
 	s3Params gateway_parameters.S3PermissionsParameters,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
+	deploymentTarget string,
 ) {
 	// proxySg := dbParams.RdsProxySG
 	// dbInstance := dbParams.DbInstance
@@ -40,7 +41,7 @@ func ClubImageRoutes(
 	// })
 
 	// POST /clubs/{clubId}/thumbnails
-	postThumbnailsInt, postThumbnailsFunc := integrations.PostClubThumbnailsIntegration(stack, vpc, s3Params)
+	postThumbnailsInt, postThumbnailsFunc := integrations.PostClubThumbnailsIntegration(stack, vpc, s3Params, deploymentTarget)
 	gateway_helpers.GrantS3AccessToLambda(postThumbnailsFunc, bucket, "clubs/*/thumbnails/*", false, true)
 
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{

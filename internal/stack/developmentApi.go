@@ -15,7 +15,7 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
-type ProdApiStackProps struct {
+type DevApiStackProps struct {
 	Props awscdk.StackProps
 
 	Vpc                               awsec2.Vpc
@@ -29,15 +29,15 @@ type ProdApiStackProps struct {
 	Authorizer awsapigatewayv2.IHttpRouteAuthorizer
 }
 
-func NewProdApiStack(scope constructs.Construct, id string, props *ProdApiStackProps) awscdk.Stack {
+func NewDevApiStack(scope constructs.Construct, id string, props *DevApiStackProps) awscdk.Stack {
 	var sprops awscdk.StackProps
 	if props != nil {
 		sprops = props.Props
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
-	httpApi := awsapigatewayv2.NewHttpApi(stack, jsii.String("ClubEventApiProd"), &awsapigatewayv2.HttpApiProps{
-		ApiName: jsii.String("ClubEventApiProd"),
+	httpApi := awsapigatewayv2.NewHttpApi(stack, jsii.String("ClubEventApiDev"), &awsapigatewayv2.HttpApiProps{
+		ApiName: jsii.String("ClubEventApiDev"),
 		CorsPreflight: &awsapigatewayv2.CorsPreflightOptions{
 			AllowHeaders: &[]*string{
 				jsii.String("*"),
@@ -54,7 +54,7 @@ func NewProdApiStack(scope constructs.Construct, id string, props *ProdApiStackP
 		},
 	})
 
-	const databaseName string = "PRODUCTION"
+	const databaseName string = "STAGING"
 
 	vpc := props.Vpc
 
@@ -71,7 +71,7 @@ func NewProdApiStack(scope constructs.Construct, id string, props *ProdApiStackP
 		DbName:                   databaseName,
 	}
 
-	deploymentTarget := "Prod"
+	deploymentTarget := "Dev"
 
 	authorizer := props.Authorizer
 

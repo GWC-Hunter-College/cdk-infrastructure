@@ -16,6 +16,7 @@ func GetEventsByPeriod(
 	stack awscdk.Stack,
 	vpc awsec2.IVpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
+	deploymentTarget string,
 ) awsapigatewayv2integrations.HttpLambdaIntegration {
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
@@ -23,8 +24,8 @@ func GetEventsByPeriod(
 	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
-	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetEventsByPeriodFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("GetEventsByPeriod"),
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetEventsByPeriodFunction"+deploymentTarget), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("GetEventsByPeriod" + deploymentTarget),
 		Description:  jsii.String("Get posted events between start and end date"),
 		Entry:        jsii.String("lambda/api/events/get.go"),
 		Environment: &map[string]*string{
@@ -43,7 +44,7 @@ func GetEventsByPeriod(
 	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
-		jsii.String("GetEventsByPeriodIntegration"),
+		jsii.String("GetEventsByPeriodIntegration"+deploymentTarget),
 		function,
 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 	)
@@ -56,6 +57,7 @@ func GetEventById(
 	stack awscdk.Stack,
 	vpc awsec2.IVpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
+	deploymentTarget string,
 ) awsapigatewayv2integrations.HttpLambdaIntegration {
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
@@ -63,8 +65,8 @@ func GetEventById(
 	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
-	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetEventByIdFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("GetEventById"),
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetEventByIdFunction"+deploymentTarget), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("GetEventById" + deploymentTarget),
 		Description:  jsii.String("Get event by ID"),
 		Entry:        jsii.String("lambda/api/events/eventId/get.go"),
 		Environment: &map[string]*string{
@@ -83,7 +85,7 @@ func GetEventById(
 	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
-		jsii.String("GetEventByIdIntegration"),
+		jsii.String("GetEventByIdIntegration"+deploymentTarget),
 		function,
 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 	)

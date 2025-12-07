@@ -12,10 +12,10 @@ import (
 // Routes:
 //
 // - GET /health: A simple health check endpoint that returns a "Server Running" response.
-func TestRoutes(httpApi awsapigatewayv2.HttpApi, stack awscdk.Stack) {
+func TestRoutes(httpApi awsapigatewayv2.HttpApi, stack awscdk.Stack, deploymentTarget string) {
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path:        jsii.String("/health"),
 		Methods:     &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
-		Integration: integrations.PingTestIntegration(stack),
+		Integration: integrations.PingTestIntegration(stack, deploymentTarget),
 	})
 }

@@ -16,11 +16,12 @@ func GetClubThumbnailsIntegration(
 	vpc awsec2.IVpc,
 	lambdaToProxySG awsec2.ISecurityGroup,
 	s3Params gateway_parameters.S3PermissionsParameters,
+	deploymentTarget string,
 ) (awsapigatewayv2integrations.HttpLambdaIntegration, awscdklambdagoalpha.GoFunction) {
 	bucket := s3Params.Bucket
 
-	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetClubThumbnailFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("GetClubThumbnailsPresign"),
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetClubThumbnailFunction"+deploymentTarget), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("GetClubThumbnailsPresign" + deploymentTarget),
 		Entry:        jsii.String("lambda/api/clubs/thumbnails/get/get.go"),
 		Environment: &map[string]*string{
 			"S3_BUCKET": bucket.BucketName(),
@@ -41,11 +42,12 @@ func PostClubThumbnailsIntegration(
 	stack awscdk.Stack,
 	vpc awsec2.IVpc,
 	s3Params gateway_parameters.S3PermissionsParameters,
+	deploymentTarget string,
 ) (awsapigatewayv2integrations.HttpLambdaIntegration, awscdklambdagoalpha.GoFunction) {
 	bucket := s3Params.Bucket
 
-	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("PostClubThumbnailPresignFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("PostClubThumbnailPresign"),
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("PostClubThumbnailPresignFunction"+deploymentTarget), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("PostClubThumbnailPresign" + deploymentTarget),
 		Entry:        jsii.String("lambda/api/clubs/thumbnails/post/post.go"),
 		Environment: &map[string]*string{
 			"S3_BUCKET": bucket.BucketName(),
