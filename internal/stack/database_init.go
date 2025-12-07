@@ -51,7 +51,7 @@ func NewDatabaseInitStack(scope constructs.Construct, id string, props *Props) {
 				lambdaSecurityGroup,
 			},
 			LogGroup: awslogs.NewLogGroup(stack, jsii.String("DatabaseInitLogGroup"), &awslogs.LogGroupProps{
-				LogGroupName:  jsii.String("Database Initializer Logs"),
+				LogGroupName:  jsii.String("DatabaseInitializerLogs"),
 				LogGroupClass: awslogs.LogGroupClass_STANDARD,
 				Retention:     awslogs.RetentionDays_ONE_WEEK,
 			}),
