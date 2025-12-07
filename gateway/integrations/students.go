@@ -67,7 +67,7 @@ func GetMyClubs(
 
 	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetMyClubsFunction"+deploymentTarget), &awscdklambdagoalpha.GoFunctionProps{
 		FunctionName: jsii.String("GetMyClubs" + deploymentTarget),
-		Description:  jsii.String("Returns clubs of the student of asoociated jwt"),
+		Description:  jsii.String("Returns clubs of the student of associated jwt"),
 		Entry:        jsii.String("lambda/api/me/clubs/get.go"),
 		Environment: &map[string]*string{
 			"DB_SECRET_ARN": arn,

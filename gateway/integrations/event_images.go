@@ -76,7 +76,7 @@ func PostEventImagesIntegration(
 		Vpc: vpc,
 	})
 
-	gateway_helpers.GrantS3AccessToLambda(function, bucket, "events/*", true, false)
+	gateway_helpers.GrantS3AccessToLambda(function, bucket, "events/*", false, true)
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
 		jsii.String("PostEventImagePresignIntegration"+deploymentTarget),
