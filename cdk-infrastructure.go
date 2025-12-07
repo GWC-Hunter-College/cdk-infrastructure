@@ -95,6 +95,23 @@ func main() {
 		Authorizer: authorization.Authorizer,
 	})
 
+	stack.NewDevApiStack(app, "DevApiStack", &stack.DevApiStackProps{
+		Props: awscdk.StackProps{
+			Env:         env(),
+			Description: jsii.String("Stack for the development API Gateway and its routes"),
+		},
+
+		Vpc:                               network.Vpc,
+		LambdaSecretsManagerSecurityGroup: network.LambdaSecretsManagerSecurityGroup,
+		LambdaSecurityGroup:               database.LambdaSecurityGroup,
+		DbInstance:                        database.DbInstance,
+
+		Bucket: image.Bucket,
+
+		UserPool:  authentication.UserPool,
+		AppClient: authentication.AppClient,
+	})
+
 	stack.NewBastionStack(app, "BastionStack", &stack.BastionStackProps{
 		StackProps: awscdk.StackProps{
 			Env:         env(),
@@ -105,13 +122,11 @@ func main() {
 		DbSecurityGroup: database.DbSecurityGroup,
 	})
 
-	stubLambda := stack.NewStubLambdaStack(app, "StubLambdaStack", &stack.StubLambdaStackProps{
-		Props: awscdk.StackProps{
-			Env: env(),
-		},
-	})
-
-	_ = stubLambda
+	// stack.NewStubLambdaStack(app, "StubLambdaStack", &stack.StubLambdaStackProps{
+	// 	Props: awscdk.StackProps{
+	// 		Env: env(),
+	// 	},
+	// })
 
 	stack.NewDatabaseInitStack(app, "DatabaseInitStack", &stack.Props{
 		StackProps: awscdk.StackProps{
