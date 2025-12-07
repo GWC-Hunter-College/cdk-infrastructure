@@ -28,7 +28,7 @@ func NewNetworkStack(scope constructs.Construct, id string, props *NetworkStackP
 
 	vpc := awsec2.NewVpc(stack, jsii.String("vpc"), &awsec2.VpcProps{
 		IpAddresses:                  awsec2.IpAddresses_Cidr(jsii.String(CIDR)),
-		MaxAzs:                       jsii.Number(1),
+		MaxAzs:                       jsii.Number(2),
 		NatGateways:                  jsii.Number(0),
 		RestrictDefaultSecurityGroup: jsii.Bool(true),
 		SubnetConfiguration: &[]*awsec2.SubnetConfiguration{
@@ -65,11 +65,22 @@ func NewNetworkStack(scope constructs.Construct, id string, props *NetworkStackP
 		jsii.String("Allow connections to SecretsManager VPC endpoint."),
 		jsii.Bool(false))
 
+	// Select one of the VPC subnets in one of the availability zones to host the endpoint network interface
+	isoSel := vpc.SelectSubnets(&awsec2.SubnetSelection{
+		SubnetGroupName: jsii.String("private-subnet-isolated"),
+	})
+	oneAzSubnet := (*isoSel.Subnets)[0]
+
 	vpc.AddInterfaceEndpoint(jsii.String("secrets-manager-endpoint"), &awsec2.InterfaceVpcEndpointOptions{
 		Service:           awsec2.InterfaceVpcEndpointAwsService_SECRETS_MANAGER(),
 		PrivateDnsEnabled: jsii.Bool(true),
 		Open:              jsii.Bool(false),
 		SecurityGroups:    &[]awsec2.ISecurityGroup{secretsManagerVpcEndpointSecurityGroup},
+		Subnets: &awsec2.SubnetSelection{
+			Subnets: &[]awsec2.ISubnet{
+				oneAzSubnet,
+			},
+		},
 	})
 
 	return &NetworkStack{
