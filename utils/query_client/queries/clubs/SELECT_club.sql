@@ -6,7 +6,6 @@ SELECT
   ci.description AS description,
   ci.website_url AS website_url
 FROM clubs c
-INNER JOIN verified_clubs vc ON vc.fk_club_id = c.id
 LEFT JOIN images     i  ON i.id = c.fk_logo_id
 LEFT JOIN club_info  ci ON ci.fk_club_id = c.id
 WHERE c.id = ?
