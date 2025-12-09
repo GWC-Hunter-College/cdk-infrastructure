@@ -49,6 +49,7 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 				awsapigatewayv2.CorsHttpMethod_POST,
 				awsapigatewayv2.CorsHttpMethod_OPTIONS,
 				awsapigatewayv2.CorsHttpMethod_PATCH,
+				awsapigatewayv2.CorsHttpMethod_DELETE,
 			},
 			AllowOrigins: &[]*string{
 				jsii.String("*"), // allowing from all origins atm, should be locked down later
