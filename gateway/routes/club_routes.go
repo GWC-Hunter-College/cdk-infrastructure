@@ -25,6 +25,7 @@ func ClubRoutes(
 	vpc awsec2.Vpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
 	authorizer awsapigatewayv2.IHttpRouteAuthorizer,
+	deploymentTarget string,
 ) {
 	// GET /clubs
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
@@ -32,7 +33,7 @@ func ClubRoutes(
 		Methods: &[]awsapigatewayv2.HttpMethod{
 			awsapigatewayv2.HttpMethod_GET,
 		},
-		Integration: integrations.GetClubsByVerification(stack, vpc, dbParams),
+		Integration: integrations.GetClubsByVerification(stack, vpc, dbParams, deploymentTarget),
 	})
 
 	// GET /clubs/{clubId}
@@ -41,7 +42,7 @@ func ClubRoutes(
 		Methods: &[]awsapigatewayv2.HttpMethod{
 			awsapigatewayv2.HttpMethod_GET,
 		},
-		Integration: integrations.GetClubById(stack, vpc, dbParams),
+		Integration: integrations.GetClubById(stack, vpc, dbParams, deploymentTarget),
 	})
 
 	// GET /clubs/{clubId}/events
@@ -50,7 +51,7 @@ func ClubRoutes(
 		Methods: &[]awsapigatewayv2.HttpMethod{
 			awsapigatewayv2.HttpMethod_GET,
 		},
-		Integration: integrations.GetClubEventsByPeriod(stack, vpc, dbParams),
+		Integration: integrations.GetClubEventsByPeriod(stack, vpc, dbParams, deploymentTarget),
 	})
 
 	// POST /clubs/{clubId}/events
@@ -59,7 +60,7 @@ func ClubRoutes(
 		Methods: &[]awsapigatewayv2.HttpMethod{
 			awsapigatewayv2.HttpMethod_POST,
 		},
-		Integration: integrations.PostNewClubEvent(stack, vpc, dbParams),
+		Integration: integrations.PostNewClubEvent(stack, vpc, dbParams, deploymentTarget),
 		Authorizer:  authorizer,
 	})
 
@@ -80,6 +81,15 @@ func ClubRoutes(
 			awsapigatewayv2.HttpMethod_DELETE,
 		},
 		Integration: integrations.DeleteClubMemberMe(stack, vpc, dbParams),
+	})
+
+	// POST /clubs
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path: jsii.String("/clubs"),
+		Methods: &[]awsapigatewayv2.HttpMethod{
+			awsapigatewayv2.HttpMethod_POST,
+		},
+		Integration: integrations.PostNewClub(stack, vpc, dbParams, deploymentTarget),
 		Authorizer:  authorizer,
 	})
 }

@@ -78,10 +78,11 @@ func NewDatabaseStack(scope constructs.Construct, id string, props *DatabaseStac
 		Credentials:         awsrds.Credentials_FromGeneratedSecret(jsii.String("dbadmin"), nil),
 		AllocatedStorage:    jsii.Number(20),
 		MaxAllocatedStorage: jsii.Number(100),
-		BackupRetention:     awscdk.Duration_Days(jsii.Number(7)),
-		MultiAz:             jsii.Bool(false),
-		RemovalPolicy:       awscdk.RemovalPolicy_DESTROY,
-		DeletionProtection:  jsii.Bool(false),
+		BackupRetention:     awscdk.Duration_Days(jsii.Number(1)),
+		// BackupRetention:     awscdk.Duration_Days(jsii.Number(7)), // This gave me issues with free tier
+		MultiAz:            jsii.Bool(false),
+		RemovalPolicy:      awscdk.RemovalPolicy_DESTROY,
+		DeletionProtection: jsii.Bool(false),
 	})
 
 	// Saving costs

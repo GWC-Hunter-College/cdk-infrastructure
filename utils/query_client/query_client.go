@@ -7,6 +7,7 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"errors"
 	"fmt"
 	"io/fs"
 	"log"
@@ -314,6 +315,94 @@ func (qc *QueryClient) ExecMulti(queries []Query) (results []sql.Result, err err
 	err = tx.Commit()
 
 	return results, nil
+}
+
+// Execute multiple queries in sequence, each from their own file with optional args for placeholders in a transaction.
+// If any query fails, the transaction is aborted and rolled back.
+//
+// This variation of Exec uses the result of the first query to return the last inserted ID.
+// This is useful for cases where you need to insert a record and then use its ID for subsequent queries.
+//
+// Please note that the first query must be an INSERT statement that returns a valid last inserted ID.
+//
+// The needId slice indicates which queries require the last inserted ID as the first argument.
+// The first boolean in needId corresponds to the second query, the second boolean corresponds to the third query, and so on.
+// Therefore, this method expects len(queries) == len(needId) + 1.
+func (qc *QueryClient) ExecInsertQuery(queries []Query, needId []bool) (lastInsertId int64, err error) {
+	if len(queries) == 0 {
+		return 0, errors.New("no queries provided")
+	}
+
+	if len(queries) != len(needId)+1 {
+		return 0, errors.New("length of queries and needId must be the same")
+	}
+
+	tx, err := qc.Conn.Beginx()
+
+	if err != nil {
+		log.Printf("Error beginning transaction: %v", err)
+		return 0, err
+	}
+
+	initialQueryString, err := loadSQLFromFile(queries[0].Filepath)
+	if err != nil {
+		log.Printf("Error loading SQL from file %s: %v", queries[0].Filepath, err)
+		tx.Rollback()
+		return 0, err
+	}
+
+	insertMainResult, err := tx.Exec(initialQueryString, queries[0].Args...)
+	if err != nil {
+		log.Printf("Error executing query from file %s: %v", queries[0].Filepath, err)
+		tx.Rollback()
+		return 0, err
+	}
+
+	lastInsertId, err = insertMainResult.LastInsertId()
+	if err != nil {
+		log.Printf("Error getting last inserted ID: %v", err)
+		tx.Rollback()
+		return 0, err
+	}
+
+	log.Printf("Executed query from file: %s", queries[0].Filepath)
+
+	for i, query := range queries[1:] {
+		queryString, err := loadSQLFromFile(query.Filepath)
+		if err != nil {
+			log.Printf("Error loading SQL from file %s: %v", query.Filepath, err)
+			tx.Rollback()
+			return 0, err
+		}
+
+		var args []any
+		if needId[i] {
+			args = append([]any{lastInsertId}, query.Args...)
+		} else {
+			args = query.Args
+		}
+
+		_, err = tx.Exec(queryString, args...)
+
+		if err != nil {
+			log.Printf("Error executing query from file %s: %v", query.Filepath, err)
+
+			tx.Rollback()
+
+			return 0, err
+		}
+
+		log.Printf("Executed query from file: %s", query.Filepath)
+	}
+
+	err = tx.Commit()
+
+	if err != nil {
+		log.Printf("Error committing transaction: %v", err)
+		return 0, err
+	}
+
+	return lastInsertId, nil
 }
 
 // DO NOT USE THIS METHOD. IT DOES NOT WORK PROPERLY.

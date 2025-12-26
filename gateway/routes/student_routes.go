@@ -20,12 +20,13 @@ func StudentMeRoutes(
 	vpc awsec2.Vpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
 	Authorizer awsapigatewayv2.IHttpRouteAuthorizer,
+	deploymentTarget string,
 ) {
 	// GET /me route
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path:        jsii.String("/me"),
 		Methods:     &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
-		Integration: integrations.GetStudentMeBySub(stack, vpc, dbParams),
+		Integration: integrations.GetStudentMeBySub(stack, vpc, dbParams, deploymentTarget),
 		Authorizer:  Authorizer,
 	})
 
@@ -33,7 +34,7 @@ func StudentMeRoutes(
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path:        jsii.String("/me/clubs"),
 		Methods:     &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
-		Integration: integrations.GetMyClubs(stack, vpc, dbParams),
+		Integration: integrations.GetMyClubs(stack, vpc, dbParams, deploymentTarget),
 		Authorizer:  Authorizer,
 	})
 
@@ -41,7 +42,7 @@ func StudentMeRoutes(
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path:        jsii.String("/me/events"),
 		Methods:     &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
-		Integration: integrations.GetMyEvents(stack, vpc, dbParams),
+		Integration: integrations.GetMyEvents(stack, vpc, dbParams, deploymentTarget),
 		Authorizer:  Authorizer,
 	})
 }

@@ -23,25 +23,29 @@ func main() {
 
 	stack.NewFrontendStack(app, "FrontendStack", &stack.FrontendStackProps{
 		Props: awscdk.StackProps{
-			Env: env(),
+			Env:         env(),
+			Description: jsii.String("Stack for the GWC website deployment"),
 		},
 	})
 
 	stack.NewFrontendHccStack(app, "FrontendHccStack", &stack.FrontendHccStackProps{
 		Props: awscdk.StackProps{
-			Env: env(),
+			Env:         env(),
+			Description: jsii.String("Stack for the EMS website deployment"),
 		},
 	})
 
 	network := stack.NewNetworkStack(app, "NetworkStack", &stack.NetworkStackProps{
 		Props: awscdk.StackProps{
-			Env: env(),
+			Env:         env(),
+			Description: jsii.String("Stack for all network infrastructure constructs"),
 		},
 	})
 
 	database := stack.NewDatabaseStack(app, "DatabaseStack", &stack.DatabaseStackProps{
 		Props: awscdk.StackProps{
-			Env: env(),
+			Env:         env(),
+			Description: jsii.String("Stack for database constructs"),
 		},
 		Vpc: network.Vpc,
 	})
@@ -55,13 +59,15 @@ func main() {
 
 	authentication := stack.NewAuthenticationStack(app, "AuthenticationStack", &stack.AuthenticationStackProps{
 		Props: awscdk.StackProps{
-			Env: env(),
+			Env:         env(),
+			Description: jsii.String("Stack for Cognito User Pool and App Client"),
 		},
 	})
 
 	authorization := stack.NewAuthorizationStack(app, "AuthorizationStack", &stack.AuthorizationStackProps{
 		Props: awscdk.StackProps{
-			Env: env(),
+			Env:         env(),
+			Description: jsii.String("Stack for Cognito Authorizer for API Gateway"),
 		},
 
 		Vpc:                               network.Vpc,
@@ -73,9 +79,10 @@ func main() {
 		AppClient: authentication.AppClient,
 	})
 
-	stack.NewApiStack(app, "ApiStack", &stack.ApiStackProps{
+	stack.NewProdApiStack(app, "ProdApiStack", &stack.ProdApiStackProps{
 		Props: awscdk.StackProps{
-			Env: env(),
+			Env:         env(),
+			Description: jsii.String("Stack for the production API Gateway and its routes"),
 		},
 
 		Vpc:                               network.Vpc,
@@ -88,26 +95,43 @@ func main() {
 		Authorizer: authorization.Authorizer,
 	})
 
+	stack.NewDevApiStack(app, "DevApiStack", &stack.DevApiStackProps{
+		Props: awscdk.StackProps{
+			Env:         env(),
+			Description: jsii.String("Stack for the development API Gateway and its routes"),
+		},
+
+		Vpc:                               network.Vpc,
+		LambdaSecretsManagerSecurityGroup: network.LambdaSecretsManagerSecurityGroup,
+		LambdaSecurityGroup:               database.LambdaSecurityGroup,
+		DbInstance:                        database.DbInstance,
+
+		Bucket: image.Bucket,
+
+		UserPool:  authentication.UserPool,
+		AppClient: authentication.AppClient,
+	})
+
 	stack.NewBastionStack(app, "BastionStack", &stack.BastionStackProps{
 		StackProps: awscdk.StackProps{
-			Env: env(),
+			Env:         env(),
+			Description: jsii.String("Stack for the RDS root access bastion EC2 instance."),
 		},
 
 		Vpc:             network.Vpc,
 		DbSecurityGroup: database.DbSecurityGroup,
 	})
 
-	stubLambda := stack.NewStubLambdaStack(app, "StubLambdaStack", &stack.StubLambdaStackProps{
-		Props: awscdk.StackProps{
-			Env: env(),
-		},
-	})
-
-	_ = stubLambda
+	// stack.NewStubLambdaStack(app, "StubLambdaStack", &stack.StubLambdaStackProps{
+	// 	Props: awscdk.StackProps{
+	// 		Env: env(),
+	// 	},
+	// })
 
 	stack.NewDatabaseInitStack(app, "DatabaseInitStack", &stack.Props{
 		StackProps: awscdk.StackProps{
-			Env: env(),
+			Env:         env(),
+			Description: jsii.String("Stack for the database table initialization lambdas. Should destroy if you see it since the lambda has already run."),
 		},
 
 		Vpc:                               network.Vpc,

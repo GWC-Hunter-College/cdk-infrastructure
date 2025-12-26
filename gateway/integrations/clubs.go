@@ -16,6 +16,7 @@ func GetClubsByVerification(
 	stack awscdk.Stack,
 	vpc awsec2.IVpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
+	deploymentTarget string,
 ) awsapigatewayv2integrations.HttpLambdaIntegration {
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
@@ -23,8 +24,8 @@ func GetClubsByVerification(
 	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
-	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetClubsByVerificationFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("GetClubsByVerification"),
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetClubsByVerificationFunction"+deploymentTarget), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("GetClubsByVerification" + deploymentTarget),
 		Description:  jsii.String("Get only verified clubs if verified is true, else get all clubs"),
 		Entry:        jsii.String("lambda/api/clubs/get.go"),
 		Environment: &map[string]*string{
@@ -43,7 +44,7 @@ func GetClubsByVerification(
 	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
-		jsii.String("GetClubsByVerificationIntegration"),
+		jsii.String("GetClubsByVerificationIntegration"+deploymentTarget),
 		function,
 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 	)
@@ -56,6 +57,7 @@ func GetClubById(
 	stack awscdk.Stack,
 	vpc awsec2.IVpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
+	deploymentTarget string,
 ) awsapigatewayv2integrations.HttpLambdaIntegration {
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
@@ -63,8 +65,8 @@ func GetClubById(
 	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
-	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetClubByIdFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("GetClubsById"),
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetClubByIdFunction"+deploymentTarget), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("GetClubsById" + deploymentTarget),
 		Description:  jsii.String("Get by its clubId"),
 		Entry:        jsii.String("lambda/api/clubs/clubId/get.go"),
 		Environment: &map[string]*string{
@@ -83,7 +85,7 @@ func GetClubById(
 	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
-		jsii.String("GetClubByIdIntegration"),
+		jsii.String("GetClubByIdIntegration"+deploymentTarget),
 		function,
 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 	)
@@ -96,6 +98,7 @@ func GetClubEventsByPeriod(
 	stack awscdk.Stack,
 	vpc awsec2.IVpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
+	deploymentTarget string,
 ) awsapigatewayv2integrations.HttpLambdaIntegration {
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
@@ -103,8 +106,8 @@ func GetClubEventsByPeriod(
 	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
-	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetClubEventsByPeriodFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("GetClubEventsByPeriod"),
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("GetClubEventsByPeriodFunction"+deploymentTarget), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("GetClubEventsByPeriod" + deploymentTarget),
 		Description:  jsii.String("Get posted events from a specific club between start and end date"),
 		Entry:        jsii.String("lambda/api/clubs/clubId/events/get.go"),
 		Environment: &map[string]*string{
@@ -123,7 +126,7 @@ func GetClubEventsByPeriod(
 	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
-		jsii.String("GetClubEventsByPeriodIntegration"),
+		jsii.String("GetClubEventsByPeriodIntegration"+deploymentTarget),
 		function,
 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 	)
@@ -136,6 +139,7 @@ func PostNewClubEvent(
 	stack awscdk.Stack,
 	vpc awsec2.IVpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
+	deploymentTarget string,
 ) awsapigatewayv2integrations.HttpLambdaIntegration {
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
@@ -143,8 +147,8 @@ func PostNewClubEvent(
 	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
-	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("PostNewClubEventFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("PostNewClubEvent"),
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("PostNewClubEventFunction"+deploymentTarget), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("PostNewClubEvent" + deploymentTarget),
 		Description:  jsii.String("Post a new event to a specific club"),
 		Entry:        jsii.String("lambda/api/clubs/clubId/events/post/post.go"),
 		Environment: &map[string]*string{
@@ -163,7 +167,7 @@ func PostNewClubEvent(
 	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
-		jsii.String("PostNewClubEventIntegration"),
+		jsii.String("PostNewClubEventIntegration"+deploymentTarget),
 		function,
 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 	)
@@ -175,6 +179,7 @@ func PostNewClub(
 	stack awscdk.Stack,
 	vpc awsec2.IVpc,
 	dbParams gateway_parameters.DatabaseConnectionParameters,
+	deploymentTarget string,
 ) awsapigatewayv2integrations.HttpLambdaIntegration {
 	host := dbParams.DbHost
 	dbName := dbParams.DbName
@@ -182,8 +187,8 @@ func PostNewClub(
 	lambdaSG := dbParams.LambdaSG
 	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
 
-	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("CreateNewClubFunction"), &awscdklambdagoalpha.GoFunctionProps{
-		FunctionName: jsii.String("CreateNewClubFunction"),
+	function := awscdklambdagoalpha.NewGoFunction(stack, jsii.String("CreateNewClubFunction"+deploymentTarget), &awscdklambdagoalpha.GoFunctionProps{
+		FunctionName: jsii.String("CreateNewClubFunction" + deploymentTarget),
 		Description:  jsii.String("Create a new club"),
 		Entry:        jsii.String("lambda/api/clubs/post/post.go"),
 		Environment: &map[string]*string{
@@ -202,7 +207,7 @@ func PostNewClub(
 	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
 
 	integration := awsapigatewayv2integrations.NewHttpLambdaIntegration(
-		jsii.String("CreateNewClubIntegration"),
+		jsii.String("CreateNewClubIntegration"+deploymentTarget),
 		function,
 		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
 	)
