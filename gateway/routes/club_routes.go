@@ -13,7 +13,12 @@ import (
 // Helper function to add club routes to the API.
 // Routes:
 //
-// POST /clubs/{clubId}/events
+//	GET    /clubs
+//	GET    /clubs/{clubId}
+//	GET    /clubs/{clubId}/events
+//	POST   /clubs/{clubId}/events
+//	POST   /clubs/{clubId}/members/me
+//	DELETE /clubs/{clubId}/members/me
 func ClubRoutes(
 	httpApi awsapigatewayv2.HttpApi,
 	stack awscdk.Stack,
@@ -31,7 +36,7 @@ func ClubRoutes(
 		Integration: integrations.GetClubsByVerification(stack, vpc, dbParams, deploymentTarget),
 	})
 
-	// Get /clubs/{clubId}
+	// GET /clubs/{clubId}
 	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
 		Path: jsii.String("/clubs/{clubId}"),
 		Methods: &[]awsapigatewayv2.HttpMethod{
@@ -57,6 +62,25 @@ func ClubRoutes(
 		},
 		Integration: integrations.PostNewClubEvent(stack, vpc, dbParams, deploymentTarget),
 		Authorizer:  authorizer,
+	})
+
+	// POST /clubs/{clubId}/members/me  (join club as current student)
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path: jsii.String("/clubs/{clubId}/members/me"),
+		Methods: &[]awsapigatewayv2.HttpMethod{
+			awsapigatewayv2.HttpMethod_POST,
+		},
+		Integration: integrations.PostJoinClubMemberMe(stack, vpc, dbParams),
+		Authorizer:  authorizer,
+	})
+
+	// DELETE /clubs/{clubId}/members/me  (leave club as current student)
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Path: jsii.String("/clubs/{clubId}/members/me"),
+		Methods: &[]awsapigatewayv2.HttpMethod{
+			awsapigatewayv2.HttpMethod_DELETE,
+		},
+		Integration: integrations.DeleteClubMemberMe(stack, vpc, dbParams),
 	})
 
 	// POST /clubs

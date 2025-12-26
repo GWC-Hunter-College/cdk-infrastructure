@@ -214,3 +214,85 @@ func PostNewClub(
 
 	return integration
 }
+
+func PostJoinClubMemberMe(
+	stack awscdk.Stack,
+	vpc awsec2.IVpc,
+	dbParams gateway_parameters.DatabaseConnectionParameters,
+) awsapigatewayv2integrations.HttpLambdaIntegration {
+	host := dbParams.DbHost
+	dbName := dbParams.DbName
+	arn := dbParams.Secret.SecretArn()
+	lambdaSG := dbParams.LambdaSG
+	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
+
+	function := awscdklambdagoalpha.NewGoFunction(
+		stack,
+		jsii.String("PostJoinClubMemberMeFunction"),
+		&awscdklambdagoalpha.GoFunctionProps{
+			FunctionName: jsii.String("PostJoinClubMemberMe"),
+			Description:  jsii.String("Join a club as the current student"),
+			Entry:        jsii.String("lambda/api/clubs/clubId/members/me/post/post.go"),
+			Environment: &map[string]*string{
+				"DB_SECRET_ARN": arn,
+				"DB_HOST":       jsii.String(host),
+				"DB_NAME":       jsii.String(dbName),
+			},
+			Vpc:     vpc,
+			Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
+			SecurityGroups: &[]awsec2.ISecurityGroup{
+				lambdaSG,
+				lambdaToSecretsManagerSG,
+			},
+		},
+	)
+
+	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
+
+	return awsapigatewayv2integrations.NewHttpLambdaIntegration(
+		jsii.String("PostJoinClubMemberMeIntegration"),
+		function,
+		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
+	)
+}
+
+func DeleteClubMemberMe(
+	stack awscdk.Stack,
+	vpc awsec2.IVpc,
+	dbParams gateway_parameters.DatabaseConnectionParameters,
+) awsapigatewayv2integrations.HttpLambdaIntegration {
+	host := dbParams.DbHost
+	dbName := dbParams.DbName
+	arn := dbParams.Secret.SecretArn()
+	lambdaSG := dbParams.LambdaSG
+	lambdaToSecretsManagerSG := dbParams.LambdaToSecretsManagerSG
+
+	function := awscdklambdagoalpha.NewGoFunction(
+		stack,
+		jsii.String("DeleteClubMemberMeFunction"),
+		&awscdklambdagoalpha.GoFunctionProps{
+			FunctionName: jsii.String("DeleteClubMemberMe"),
+			Description:  jsii.String("Leave a club as the current student"),
+			Entry:        jsii.String("lambda/api/clubs/clubId/members/me/delete/delete.go"),
+			Environment: &map[string]*string{
+				"DB_SECRET_ARN": arn,
+				"DB_HOST":       jsii.String(host),
+				"DB_NAME":       jsii.String(dbName),
+			},
+			Vpc:     vpc,
+			Timeout: awscdk.Duration_Minutes(jsii.Number(1)),
+			SecurityGroups: &[]awsec2.ISecurityGroup{
+				lambdaSG,
+				lambdaToSecretsManagerSG,
+			},
+		},
+	)
+
+	gateway_helpers.GrantRdsAccessToLambda(function, dbParams.DbInstance, dbParams.Secret)
+
+	return awsapigatewayv2integrations.NewHttpLambdaIntegration(
+		jsii.String("DeleteClubMemberMeIntegration"),
+		function,
+		&awsapigatewayv2integrations.HttpLambdaIntegrationProps{},
+	)
+}
