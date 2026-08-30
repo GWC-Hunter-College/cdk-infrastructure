@@ -71,6 +71,8 @@ The image handlers construct responses directly and use different field names an
 
 Successful helper responses set `Content-Type: application/json` and permissive CORS headers. Image and health responses do not all set `Content-Type` consistently.
 
+Database-backed handlers share the embedded-SQL loader described in the [database overview](../database/README.md#application-query-access). It reads into a fixed 4 KiB buffer without applying the returned byte count, so a loaded query can contain trailing zero bytes or be truncated. The endpoint pages document each handler's response construction and any additional deterministic query-file or SQL defects visible in source; a deployed database integration should still be exercised before treating a success example as a runtime guarantee.
+
 ## CORS
 
 Both APIs allow all origins and all request headers. The production API advertises `GET`, `POST`, `OPTIONS`, `PATCH`, and `DELETE`; the development API advertises the same list without `DELETE`. No active application route uses `PATCH`.

@@ -29,6 +29,7 @@ cp .env.example .env
 | `PRODUCTION_STATUS` | Used only by `AuthorizationStack`: case-insensitive `true` sets `DB_NAME=PRODUCTION`; missing/blank/other values set `DB_NAME=STAGING`. |
 
 The development API always uses `STAGING`, and the production API always uses `PRODUCTION`, regardless of `PRODUCTION_STATUS`.
+The tracked `.env.example` does not include `PRODUCTION_STATUS`; add it to the local `.env` when the identity-sync target must be explicit.
 
 `.env` and `cdk.out` are ignored by Git. Keep both private: the Google provider secret is supplied as a synthesis-time CDK value and can appear in the generated cloud assembly and CloudFormation deployment data. Do not put credentials in shell examples, documentation, commits, issue text, or build logs.
 

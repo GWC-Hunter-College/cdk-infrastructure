@@ -1,4 +1,4 @@
-# Club Event System infrastructure
+# Event Management System backend and infrastructure
 
 This repository defines the AWS infrastructure and Go Lambda handlers for the Event Management System built for Girls Who Code at Hunter and other Hunter College clubs. The CDK application synthesizes **11 active stacks** for static frontends, networking, authentication, HTTP APIs, image storage, MySQL, database initialization, and private administrative access.
 
@@ -45,7 +45,7 @@ Create a local environment file and replace every blank value. `.env` is ignored
 cp .env.example .env
 ```
 
-`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` must be non-empty for synthesis. `CALLBACK_URLS` and `LOGOUT_URLS` accept comma-separated URLs. `PRODUCTION_STATUS` is also read by `AuthorizationStack`: only the case-insensitive value `true` selects the `PRODUCTION` database; every other value selects `STAGING`.
+`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` must be non-empty for synthesis. `CALLBACK_URLS` and `LOGOUT_URLS` accept comma-separated URLs. `PRODUCTION_STATUS` is also read by `AuthorizationStack`: only the case-insensitive value `true` selects the `PRODUCTION` database; every other value selects `STAGING`. The tracked template does not include that variable, so add it to `.env` when the trigger database selection must be explicit.
 
 Confirm the active AWS identity before doing any CDK operation that can change resources:
 
