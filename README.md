@@ -1,12 +1,102 @@
-# Welcome to your CDK Go project!
+# Club Event System infrastructure
 
-This is a blank project for CDK development with Go.
+This repository defines the AWS infrastructure and Go Lambda handlers for the Event Management System built for Girls Who Code at Hunter and other Hunter College clubs. The CDK application synthesizes **11 active stacks** for static frontends, networking, authentication, HTTP APIs, image storage, MySQL, database initialization, and private administrative access.
 
-The `cdk.json` file tells the CDK toolkit how to execute your app.
+The application currently provides:
 
-## Useful commands
+- public club and posted-event discovery, authenticated caller and membership reads, club and event creation, and direct image-upload primitives;
+- two private S3 website origins, each served through two CloudFront distributions;
+- separate production and development API Gateway HTTP APIs backed by Go Lambda functions;
+- a Cognito user pool with Cognito and Google sign-in;
+- a shared VPC, RDS MySQL instance, generated Secrets Manager secret, and logical `STAGING` and `PRODUCTION` databases;
+- a private S3 image bucket used through presigned requests; and
+- an SSM-managed bastion host in an isolated subnet.
 
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk synth`       emits the synthesized CloudFormation template
- * `go test`         run unit tests
+The source of truth for stack composition is [`cdk-infrastructure.go`](cdk-infrastructure.go). The `StubLambdaStack` source remains in the repository but its constructor is commented out, so it is not one of the 11 active stacks.
+
+## Documentation
+
+- [Architecture overview](docs/architectures/serverless/overview.md) — system boundaries and request flows
+- [Infrastructure reference](docs/architectures/serverless/infrastructure.md) — VPC, APIs, Lambda, Cognito, RDS, S3, CloudFront, and IAM
+- [Stack catalogue](docs/architectures/serverless/stacks.md) — all 11 stacks, dependencies, values, and outputs
+- [API reference](docs/api/README.md) — active routes, request/response contracts, and route-level authentication
+- [Database reference](docs/database/README.md) — provisioning, initialization, and the implemented 13-table schema
+- [Authentication and authorization](docs/architecture/authentication.md) — Cognito identity flow and database role boundaries
+- [Image uploads](docs/architecture/image-uploads.md) — signed S3 transfers and event-gallery confirmation
+- [Deployment guide](docs/architectures/serverless/deployment.md) — bootstrap, synthesis, ordering, deployment, and verification
+- [Local development](docs/development/local-development.md) — environment setup, tests, bundling, and local database-initializer invocation
+- [Documentation index](docs/README.md) — complete topic map
+
+## Prerequisites
+
+- Go compatible with the root module's `go 1.23.0` directive and `go1.24.3` toolchain declaration
+- AWS CDK v2 CLI and Node.js
+- AWS CLI credentials for the target account and Region
+- Docker for the database-initializer image asset
+- Google OAuth client credentials and valid callback/logout URLs
+
+The CDK CLI supplies `CDK_DEFAULT_ACCOUNT` and `CDK_DEFAULT_REGION` from the selected AWS credentials. All stacks use that same concrete environment.
+
+## Quick start
+
+Create a local environment file and replace every blank value. `.env` is ignored by Git.
+
+```bash
+cp .env.example .env
+```
+
+`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` must be non-empty for synthesis. `CALLBACK_URLS` and `LOGOUT_URLS` accept comma-separated URLs. `PRODUCTION_STATUS` is also read by `AuthorizationStack`: only the case-insensitive value `true` selects the `PRODUCTION` database; every other value selects `STAGING`.
+
+Confirm the active AWS identity before doing any CDK operation that can change resources:
+
+```bash
+aws sts get-caller-identity
+aws configure get region
+```
+
+Install modules, compile the repository, and synthesize the application:
+
+```bash
+go mod download
+go test ./...
+cdk list
+cdk synth
+```
+
+Bootstrap each account/Region once, then inspect changes before deployment:
+
+```bash
+cdk bootstrap aws://ACCOUNT_ID/REGION
+cdk diff --all
+```
+
+Read the [deployment guide](docs/architectures/serverless/deployment.md) before running `cdk deploy`. The active stacks share generated values and some explicitly named resources, and the database-initializer custom resource changes live data.
+
+## Repository layout
+
+| Path | Purpose |
+| --- | --- |
+| `cdk-infrastructure.go` | CDK application entry point and the 11 active stack constructors |
+| `internal/stack/` | Stack definitions for frontends, network, database, images, identity, APIs, bastion, and initialization |
+| `gateway/routes/` | HTTP route declarations shared by the production and development APIs |
+| `gateway/integrations/` | Lambda constructs, API integrations, environment variables, and resource grants |
+| `lambda/api/` | Go handlers for deployed HTTP endpoints |
+| `lambda/internal/auth/` | Cognito post-confirmation/post-authentication database upsert handler |
+| `lambda/internal/database/init/` | Docker-image Lambda and SQL migrations for database initialization |
+| `utils/` | Shared authorization, validation, and MySQL query helpers |
+| `database/models/` | API/database model types |
+| `stub/` | Stub handlers and SQL retained in source; the stub stack is inactive |
+| `.env.example` | Non-secret template for Cognito/Google redirect configuration |
+| `cdk.json` | CDK command (`go mod download && go run cdk-infrastructure.go`) and feature flags |
+
+There is no project `scripts/` directory, Makefile, or package script layer; development and deployment commands are run directly through Go, Docker, AWS CLI, and the CDK CLI.
+
+## Important lifecycle behavior
+
+Several resources intentionally have destructive removal behavior in the current definitions: both frontend buckets delete their objects on stack removal, and the Cognito user pool and RDS instance use `DESTROY`. The RDS instance also has deletion protection disabled. Treat `cdk destroy`, stack replacement, and changes that force replacement as data-impacting operations.
+
+No Route 53 hosted zones, DNS records, or ACM certificates are defined here. CloudFront uses its generated domain and managed HTTPS certificate; the APIs use `execute-api` endpoints and Cognito uses its hosted-domain URL.
+
+## License
+
+See [LICENSE](LICENSE).
