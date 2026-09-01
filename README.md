@@ -1,112 +1,52 @@
-# Event Management System backend and infrastructure
+# Hunter College Event Management System backend
 
-This repository is the backend, API, data, authentication/authorization, and AWS infrastructure layer for Hunter College's club event-management ecosystem. It stores and serves club, event, description, tag, membership, permission, and image metadata for Girls Who Code at Hunter and the broader club-event experience.
+This repository contains the backend and deployment infrastructure for Hunter College's club and event-management platform. It supports frontend applications such as:
 
-The public-facing club website and the administrative/event-management application live in separate repositories and consume this backend. This repository also provisions their S3 and CloudFront delivery infrastructure; it does not contain or build the frontend source.
+- Girls Who Code at Hunter;
+- Hunter College Clubs / Event Manager; and
+- related administrative and event-management interfaces.
 
-## High-level architecture
+The frontend application source is maintained separately. This repository owns the backend boundaries and the infrastructure used to run or host them.
 
-![High-level architecture showing separate clients using CloudFront and private website buckets, Cognito, API Gateway, Lambda, an image bucket, and RDS](docs/assets/high-level-architecture.png)
+## Repository areas
 
-Client applications load the separately built frontends through CloudFront, authenticate with Cognito when required, and call the development or production HTTP API. Go Lambda handlers read and write MySQL data and create signed S3 requests; image bytes then transfer directly between the client and the private image bucket.
+This first modularization phase organizes the repository in the following order:
 
-The CDK application synthesizes **11 active stacks** for frontend delivery, networking, authentication, authorization, HTTP APIs, image storage, MySQL, database initialization, and private administrative access.
+1. **[Hosting](hosting/README.md)** — independent static-frontend hosting. [`hosting/aws/`](hosting/aws/README.md) contains the AWS CDK implementation adapted from the standalone Website-Hosting-Iac repository.
+2. **[Database](database/README.md)** — the future provider-independent MySQL module. This phase creates its boundary and documentation only.
+3. **[API](api/README.md)** — the future provider-independent backend application used by frontend clients to access data. This phase creates its boundary and documentation only.
+4. **[Infrastructure](infrastructure/README.md)** — provider-specific deployment concerns. [`infrastructure/aws/`](infrastructure/aws/README.md) is the future AWS boundary for the API and database, while [`infrastructure/legacy/`](infrastructure/legacy/README.md) preserves the current integrated implementation.
 
-The application currently provides:
-
-- public club and posted-event discovery, authenticated caller and membership reads, club and event creation, and direct image-upload primitives;
-- two private S3 website origins, each served through two CloudFront distributions;
-- separate production and development API Gateway HTTP APIs backed by Go Lambda functions;
-- a Cognito user pool with Cognito and Google sign-in;
-- a shared VPC, RDS MySQL instance, generated Secrets Manager secret, and logical `STAGING` and `PRODUCTION` databases;
-- a private S3 image bucket used through presigned requests; and
-- an SSM-managed bastion host in an isolated subnet.
-
-The source of truth for stack composition is [`cdk-infrastructure.go`](cdk-infrastructure.go). The `StubLambdaStack` source remains in the repository but its constructor is commented out, so it is not one of the 11 active stacks.
-
-## Documentation
-
-- [Architecture overview](docs/architecture/overview.md) — detailed system relationships and request flows
-- [Serverless implementation overview](docs/architectures/serverless/overview.md) — AWS boundaries, environments, and resources
-- [Infrastructure reference](docs/architectures/serverless/infrastructure.md) — VPC, APIs, Lambda, Cognito, RDS, S3, CloudFront, and IAM
-- [Stack catalog](docs/architectures/serverless/stacks.md) — all 11 stacks, dependencies, values, and outputs
-- [API reference](docs/api/README.md) — active routes, request/response contracts, and route-level authentication
-- [Database reference](docs/database/README.md) — provisioning, initialization, and the implemented 13-table schema
-- [Authentication and authorization](docs/architecture/authentication.md) — Cognito identity flow and database role boundaries
-- [Image uploads](docs/architecture/image-uploads.md) — signed S3 transfers and event-gallery confirmation
-- [Deployment guide](docs/architectures/serverless/deployment.md) — bootstrap, synthesis, ordering, deployment, and verification
-- [Local development](docs/development/local-development.md) — environment setup, tests, bundling, and local database-initializer invocation
-- [Documentation index](docs/README.md) — complete topic map
-
-## Prerequisites
-
-- Go compatible with the root module's `go 1.23.0` directive and `go1.24.3` toolchain declaration
-- AWS CDK v2 CLI and Node.js
-- AWS CLI credentials for the target account and Region
-- Docker for the database-initializer image asset
-- Google OAuth client credentials and valid callback/logout URLs
-
-The CDK CLI supplies `CDK_DEFAULT_ACCOUNT` and `CDK_DEFAULT_REGION` from the selected AWS credentials. All stacks use that same concrete environment.
-
-## Quick start
-
-Create a local environment file and replace every blank value. `.env` is ignored by Git.
-
-```bash
-cp .env.example .env
-```
-
-`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` must be non-empty for synthesis. `CALLBACK_URLS` and `LOGOUT_URLS` accept comma-separated URLs. `PRODUCTION_STATUS` is also read by `AuthorizationStack`: only the case-insensitive value `true` selects the `PRODUCTION` database; every other value selects `STAGING`. The tracked template does not include that variable, so add it to `.env` when the trigger database selection must be explicit.
-
-Confirm the active AWS identity before doing any CDK operation that can change resources:
-
-```bash
-aws sts get-caller-identity
-aws configure get region
-```
-
-Install modules, compile the repository, and synthesize the application:
-
-```bash
-go mod download
-go test ./...
-cdk list
-cdk synth
-```
-
-Bootstrap each account/Region once, then inspect changes before deployment:
-
-```bash
-cdk bootstrap aws://ACCOUNT_ID/REGION
-cdk diff --all
-```
-
-Read the [deployment guide](docs/architectures/serverless/deployment.md) before running `cdk deploy`. The active stacks share generated values and some explicitly named resources, and the database-initializer custom resource changes live data.
-
-## Repository layout
-
-| Path | Purpose |
+| Area | State after this phase |
 | --- | --- |
-| `cdk-infrastructure.go` | CDK application entry point and the 11 active stack constructors |
-| `internal/stack/` | Stack definitions for frontends, network, database, images, identity, APIs, bastion, and initialization |
-| `gateway/routes/` | HTTP route declarations shared by the production and development APIs |
-| `gateway/integrations/` | Lambda constructs, API integrations, environment variables, and resource grants |
-| `lambda/api/` | Go handlers for deployed HTTP endpoints |
-| `lambda/internal/auth/` | Cognito post-confirmation/post-authentication database upsert handler |
-| `lambda/internal/database/init/` | Docker-image Lambda and SQL migrations for database initialization |
-| `utils/` | Shared authorization, validation, and MySQL query helpers |
-| `database/models/` | API/database model types |
-| `stub/` | Stub handlers and SQL retained in source; the stub stack is inactive |
-| `.env.example` | Non-secret template for Cognito/Google redirect configuration |
-| `cdk.json` | CDK command (`go mod download && go run cdk-infrastructure.go`) and feature flags |
+| `hosting/aws/` | Real, self-contained AWS CDK hosting implementation sourced from the accessible reference repository |
+| `database/` | README and schema visual only; database code has not been migrated |
+| `api/` | README only; API code has not been migrated |
+| `infrastructure/aws/` | README only; new API/database infrastructure has not been implemented |
+| `infrastructure/legacy/` | Preserved current all-in-one Event Management System implementation and detailed documentation |
 
-There is no project `scripts/` directory, Makefile, or package script layer; development and deployment commands are run directly through Go, Docker, AWS CLI, and the CDK CLI.
+## Current implementation
 
-## Important lifecycle behavior
+The following diagram describes the **currently implemented integrated system**, not the future modular architecture:
 
-Several resources intentionally have destructive removal behavior in the current definitions: both frontend buckets delete their objects on stack removal, and the Cognito user pool and RDS instance use `DESTROY`. The RDS instance also has deletion protection disabled. Treat `cdk destroy`, stack replacement, and changes that force replacement as data-impacting operations.
+![Current high-level architecture showing frontend clients, CloudFront and S3 hosting, Cognito, API Gateway, Lambda, image storage, and RDS](infrastructure/legacy/docs/assets/high-level-architecture.png)
 
-No Route 53 hosted zones, DNS records, or ACM certificates are defined here. CloudFront uses its generated domain and managed HTTPS certificate; the APIs use `execute-api` endpoints and Cognito uses its hosted-domain URL.
+Today, the working implementation combines AWS CDK stacks, API Gateway, Lambda handlers, Cognito, RDS MySQL, S3, CloudFront, networking, database initialization, and supporting resources. It remains intact under [`infrastructure/legacy/`](infrastructure/legacy/README.md) while later phases separate what the backend does from how it is hosted.
+
+The intended direction is:
+
+- static frontend deployment remains independent in `hosting/`;
+- MySQL schema, migrations, and database logic move toward `database/` without depending on RDS;
+- backend application behavior moves toward `api/` without being defined by Lambda or API Gateway; and
+- AWS-specific API/database deployment moves toward `infrastructure/aws/`.
+
+No database or API implementation was migrated in this phase. No production deployment or CloudFormation resource migration is implied by this layout.
+
+## Documentation and safety
+
+- Start with the [legacy implementation guide](infrastructure/legacy/README.md) for the current build, architecture, API, database, and deployment documentation.
+- Read the [hosting AWS guide](hosting/aws/README.md) before synthesizing the extracted hosting stacks.
+- Do not deploy either CDK application solely because its files moved. Existing S3 buckets, CloudFront distributions, IAM resources, DNS, certificates, and CloudFormation stack ownership must be reviewed before any production migration.
 
 ## License
 
