@@ -6,7 +6,7 @@ See the [schema reference](schema.md) for the current dbdiagram visual, maintain
 
 ## Source of truth
 
-Fresh initialization currently runs [`11_04_2025_create_core_tables_up.sql`](../../lambda/internal/database/init/migrations/11_04_2025_create_core_tables_up.sql). That migration is the authoritative schema for this repository. Earlier dated migrations, SQL under `stub/environment`, Go model structs, and diagrams do not override it.
+Fresh initialization currently runs [`11_04_2025_create_core_tables_up.sql`](../../lambda/internal/database/init/migrations/11_04_2025_create_core_tables_up.sql). That migration is the authoritative schema for the legacy implementation. Earlier dated migrations, SQL under `stub/environment`, Go model structs, and diagrams do not override it.
 
 The schema reference includes a committed dbdiagram export and links to the external [Hunter Club Event System dbdiagram](https://dbdiagram.io/d/Hunter-Club-Event-System-6861eb43f413ba35086e147c). These are visual references; they are not executed during deployment and do not override the active migration.
 

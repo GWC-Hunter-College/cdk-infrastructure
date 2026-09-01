@@ -34,17 +34,18 @@ func NewFrontendStack(scope constructs.Construct, id string, props *FrontendStac
 	cloudfrontOAI := awscloudfront.NewOriginAccessIdentity(stack, jsii.String("FrontendOAI"), &awscloudfront.OriginAccessIdentityProps{})
 	websiteBucket.GrantRead(cloudfrontOAI, nil)
 
-	cloudfrontMainBehavior := &awscloudfront.BehaviorOptions{
+	cloudfrontStagingBehavior := &awscloudfront.BehaviorOptions{
 		Origin: awscloudfrontorigins.NewS3Origin(websiteBucket, &awscloudfrontorigins.S3OriginProps{
 			OriginAccessIdentity: cloudfrontOAI,
-			OriginPath:           jsii.String("/main"),
+			OriginPath:           jsii.String("/staging"),
 		}),
 		ViewerProtocolPolicy: awscloudfront.ViewerProtocolPolicy_REDIRECT_TO_HTTPS,
 	}
 
-	frontendMain := awscloudfront.NewDistribution(stack, jsii.String("FrontendMain"), &awscloudfront.DistributionProps{
+	// Keep the reference construct ID stable while serving the staging branch.
+	frontendStaging := awscloudfront.NewDistribution(stack, jsii.String("FrontendMain"), &awscloudfront.DistributionProps{
 		DefaultRootObject: jsii.String("index.html"),
-		DefaultBehavior:   cloudfrontMainBehavior,
+		DefaultBehavior:   cloudfrontStagingBehavior,
 		ErrorResponses: &[]*awscloudfront.ErrorResponse{
 			{
 				HttpStatus:         jsii.Number(404),
@@ -62,9 +63,9 @@ func NewFrontendStack(scope constructs.Construct, id string, props *FrontendStac
 	})
 
 	awscdk.NewCfnOutput(stack, jsii.String("CloudFront_Main_Info"), &awscdk.CfnOutputProps{
-		Description: jsii.String("Main Branch CloudFront Info"),
-		Value: jsii.String("Main URL: https://" + *frontendMain.DomainName() +
-			" | ID: " + *frontendMain.DistributionId()),
+		Description: jsii.String("Staging Branch CloudFront Info"),
+		Value: jsii.String("Staging URL: https://" + *frontendStaging.DomainName() +
+			" | ID: " + *frontendStaging.DistributionId()),
 	})
 
 	cloudfrontProductionBehavior := &awscloudfront.BehaviorOptions{

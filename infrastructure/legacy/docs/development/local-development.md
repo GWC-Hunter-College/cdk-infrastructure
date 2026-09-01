@@ -1,8 +1,10 @@
 # Local development
 
+Unless a section explicitly changes directories, run commands in this guide from `infrastructure/legacy/`.
+
 ## What runs locally
 
-This repository is a Go CDK application plus Lambda handler source; it does not contain a local HTTP server, SAM template, LocalStack configuration, Makefile, or `scripts/` directory. The normal local loop compiles/tests Go packages and synthesizes CloudFormation. API Gateway, Cognito, S3, Secrets Manager, and RDS behavior is exercised against a deployed AWS environment.
+The preserved legacy implementation is a Go CDK application plus Lambda handler source; it does not contain a local HTTP server, SAM template, LocalStack configuration, Makefile, or `scripts/` directory. The normal local loop compiles/tests Go packages and synthesizes CloudFormation. API Gateway, Cognito, S3, Secrets Manager, and RDS behavior is exercised against a deployed AWS environment.
 
 The database initializer has a Docker Compose/RIE harness, but it still calls AWS Secrets Manager and a MySQL endpoint. It is not a self-contained local database.
 
@@ -10,7 +12,7 @@ The database initializer has a Docker Compose/RIE harness, but it still calls AW
 
 Install or provide:
 
-- Go matching the root module's `go 1.23.0` language directive and `go1.24.3` toolchain declaration;
+- Go matching the legacy module's `go 1.23.0` language directive and `go1.24.3` toolchain declaration;
 - Node.js and the AWS CDK v2 CLI;
 - AWS CLI credentials for synthesis context and deployed-service checks;
 - Docker for the initializer image asset and local RIE harness; and
@@ -53,7 +55,7 @@ The CDK CLI sets `CDK_DEFAULT_ACCOUNT` and `CDK_DEFAULT_REGION` for its app subp
 
 ## Install and compile
 
-The root module contains the CDK app, API handlers, and shared packages:
+The legacy module contains the CDK app, API handlers, and shared packages:
 
 ```bash
 go mod download
@@ -98,7 +100,7 @@ Expected `cdk list` output is the 11-stack inventory in [the stack catalog](../a
 
 Synthesis bundles each active `GoFunction` and builds the Docker image asset for `DatabaseInitStack`; Docker can therefore be required even when inspecting a different stack. The first run can be substantially slower while Go modules, CDK/jsii packages, Lambda binaries, and container layers are cached.
 
-The CDK watch configuration includes repository files broadly while excluding the root README, `cdk*.json`, Go module files, and tests. If using watch against a development stack, first inspect the initial diff and remember that hotswap behavior changes AWS resources:
+The CDK watch configuration includes legacy implementation files broadly while excluding its README, `cdk*.json`, Go module files, and tests. If using watch against a development stack, first inspect the initial diff and remember that hotswap behavior changes AWS resources:
 
 ```bash
 cdk watch DevApiStack

@@ -1,5 +1,7 @@
 # Deployment guide
 
+Unless a section explicitly changes directories, run commands in this guide from `infrastructure/legacy/`.
+
 This guide deploys the CDK application defined by `cdk-infrastructure.go`. Every CDK command starts the complete Go app, loads `.env` when present, constructs all 11 stacks, and stages Lambda assets. Even a command targeting one stack therefore needs valid identity configuration, the Go toolchain, and Docker access for the database-initializer image.
 
 ## Prerequisites
@@ -190,7 +192,7 @@ aws ssm start-session --target INSTANCE_ID
 
 The instance has no SSH ingress or key pair. Database credentials are not granted to its instance role; retrieve them only through an identity authorized for the generated secret.
 
-For frontend releases, upload built assets to the path exposed by the appropriate `S3...Destination`/bucket output and invalidate the matching distribution. Frontend building and upload automation are not part of this repository.
+For frontend releases, upload built assets to the path exposed by the appropriate `S3...Destination`/bucket output and invalidate the matching distribution. Frontend building and upload automation are not part of the legacy implementation.
 
 ## Change and rollback safety
 
@@ -201,4 +203,4 @@ For frontend releases, upload built assets to the path exposed by the appropriat
 - The image bucket uses the S3 construct's default removal behavior, but retained resources and fixed names can block later re-creation.
 - A failed initializer can leave partially applied SQL because statements are executed sequentially. Inspect `DatabaseInitializerLogs` before retrying or replacing the custom resource.
 
-No deployment step in this repository creates Route 53 records, custom API/CloudFront domains, or ACM certificates. Post-deployment endpoints remain the generated AWS service domains.
+No legacy deployment step creates Route 53 records, custom API/CloudFront domains, or ACM certificates. Post-deployment endpoints remain the generated AWS service domains.

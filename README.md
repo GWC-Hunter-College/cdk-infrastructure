@@ -6,7 +6,7 @@ This repository contains the backend and deployment infrastructure for Hunter Co
 - Hunter College Clubs / Event Manager; and
 - related administrative and event-management interfaces.
 
-The frontend application source is maintained separately. This repository owns the backend boundaries and the infrastructure used to run or host them.
+The frontend application source is maintained separately. This repository contains the backend boundaries and the infrastructure definitions used to run or host them.
 
 ## Repository areas
 

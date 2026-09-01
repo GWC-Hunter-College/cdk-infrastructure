@@ -1,8 +1,10 @@
 # Backend and infrastructure documentation
 
+These documents describe the preserved integrated implementation under `infrastructure/legacy/`. They are not a description of the planned modular architecture at the repository root.
+
 This directory documents the backend that stores and serves Hunter College club and event data: the AWS CDK application, Go Lambda APIs, MySQL schema, Cognito authentication, database-backed authorization, and S3 image workflows.
 
-The public club website and the administrative/event-management application are separate frontend repositories that consume these APIs. This repository provisions their AWS delivery layer along with the backend infrastructure.
+The public club website and the administrative/event-management application are separate frontend repositories that consume these APIs. The preserved implementation provisions their AWS delivery layer along with the backend infrastructure.
 
 Start with the [architecture overview](architecture/overview.md) for the end-to-end request path. Use the topic guides below for implementation details.
 

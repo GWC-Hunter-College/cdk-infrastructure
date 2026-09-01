@@ -2,9 +2,11 @@
 
 > This directory preserves the currently working, all-in-one Event Management System while the repository is modularized in phases. It is the active historical implementation, not a broken or abandoned copy. The first phase changes its location and only the minimum path documentation needed for that move; it does not migrate or redesign the database, API, authentication, authorization, or AWS backend resources.
 
-This repository is the backend, API, data, authentication/authorization, and AWS infrastructure layer for Hunter College's club event-management ecosystem. It stores and serves club, event, description, tag, membership, permission, and image metadata for Girls Who Code at Hunter and the broader club-event experience.
+Run commands in this guide from `infrastructure/legacy/`, the directory containing this implementation's `go.mod` and `cdk.json`, unless a command explicitly changes directories.
 
-The public-facing club website and the administrative/event-management application live in separate repositories and consume this backend. This repository also provisions their S3 and CloudFront delivery infrastructure; it does not contain or build the frontend source.
+This preserved implementation is the backend, API, data, authentication/authorization, and AWS infrastructure layer for Hunter College's club event-management ecosystem. It stores and serves club, event, description, tag, membership, permission, and image metadata for Girls Who Code at Hunter and the broader club-event experience.
+
+The public-facing club website and the administrative/event-management application live in separate repositories and consume this backend. The preserved implementation also provisions their S3 and CloudFront delivery infrastructure; it does not contain or build the frontend source.
 
 ## High-level architecture
 
@@ -42,7 +44,7 @@ The source of truth for stack composition is [`cdk-infrastructure.go`](cdk-infra
 
 ## Prerequisites
 
-- Go compatible with the root module's `go 1.23.0` directive and `go1.24.3` toolchain declaration
+- Go compatible with the legacy module's `go 1.23.0` directive and `go1.24.3` toolchain declaration
 - AWS CDK v2 CLI and Node.js
 - AWS CLI credentials for the target account and Region
 - Docker for the database-initializer image asset

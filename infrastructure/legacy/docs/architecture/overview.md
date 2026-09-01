@@ -1,6 +1,6 @@
 # Architecture overview
 
-This repository implements the AWS-hosted backend and delivery infrastructure for Girls Who Code at Hunter and the broader Hunter College club event-management ecosystem. It stores and serves club, event, membership, permission, and image data while supporting public discovery, authenticated management operations, Cognito sign-in, and direct-to-S3 image uploads.
+The preserved legacy implementation provides the AWS-hosted backend and delivery infrastructure for Girls Who Code at Hunter and the broader Hunter College club event-management ecosystem. It stores and serves club, event, membership, permission, and image data while supporting public discovery, authenticated management operations, Cognito sign-in, and direct-to-S3 image uploads.
 
 The public club website and the administrative/event-management application are built in separate frontend repositories. They use the CloudFront delivery and backend services provisioned here.
 
