@@ -1,10 +1,20 @@
 # Architecture overview
 
-The Event Management System is an AWS-hosted backend and web-delivery platform for Girls Who Code at Hunter and other Hunter College clubs. It supports public club and event discovery, authenticated identity and membership operations, club and event creation, Cognito sign-in, and direct-to-S3 image uploads.
+This repository implements the AWS-hosted backend and delivery infrastructure for Girls Who Code at Hunter and the broader Hunter College club event-management ecosystem. It stores and serves club, event, membership, permission, and image data while supporting public discovery, authenticated management operations, Cognito sign-in, and direct-to-S3 image uploads.
+
+The public club website and the administrative/event-management application are built in separate frontend repositories. They use the CloudFront delivery and backend services provisioned here.
 
 The CDK application synthesizes development and production APIs together. Both use the same VPC, RDS instance, Cognito user pool, and image bucket. API data is separated into `STAGING` and `PRODUCTION` MySQL schemas; the API Gateway instances and most route Lambda names are environment-specific.
 
-## Application request flow
+## Detailed system view
+
+![Detailed current architecture showing the separate frontend applications, CloudFront and website buckets, Cognito, API Gateway, route Lambdas, Secrets Manager, RDS, image storage, and SSM-managed bastion](assets/backend-architecture.svg)
+
+This primary diagram is a cleaned documentation derivative of the June 2025 Excalidraw. It retains the useful client, authentication, API, Lambda, MySQL, image-storage, and operator-access relationships while reflecting the current code: separate frontend repositories, development and production HTTP APIs, direct RDS connections, private Secrets Manager access, and signed client-to-S3 transfers. The [cleaned editable Excalidraw](assets/backend-architecture.excalidraw) is committed beside the SVG for future maintenance.
+
+## Request-flow reference
+
+The Mermaid diagram is a secondary, text-maintainable view of the main runtime paths.
 
 ```mermaid
 flowchart LR
@@ -92,4 +102,3 @@ Fresh database initialization creates 13 tables in each schema. The model suppor
 ## Design reference
 
 The historical project PDF informed the service boundaries, multi-club data model, direct-to-S3 upload pattern, and cost categories. Its embedded endpoint trackers and diagrams differ materially from several active resources, routes, and tables. The maintainable diagrams in this documentation are therefore derived from the repository source.
-

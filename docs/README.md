@@ -1,6 +1,8 @@
 # Backend and infrastructure documentation
 
-This directory documents the AWS CDK application, Go Lambda API, MySQL schema, Cognito identity model, and S3 image workflows implemented by this repository.
+This directory documents the backend that stores and serves Hunter College club and event data: the AWS CDK application, Go Lambda APIs, MySQL schema, Cognito authentication, database-backed authorization, and S3 image workflows.
+
+The public club website and the administrative/event-management application are separate frontend repositories that consume these APIs. This repository provisions their AWS delivery layer along with the backend infrastructure.
 
 Start with the [architecture overview](architecture/overview.md) for the end-to-end request path. Use the topic guides below for implementation details.
 
@@ -24,4 +26,3 @@ The active CDK entrypoint, route registration, Lambda handlers, and current data
 - [`11_04_2025_create_core_tables_up.sql`](../lambda/internal/database/init/migrations/11_04_2025_create_core_tables_up.sql) defines the schema created by a fresh database initialization.
 
 The repository also contains a commented-out stub stack, an unregistered database-test route helper, and earlier SQL snapshots. They are not part of the active API or fresh-install schema unless the CDK entrypoint or an active handler references them.
-

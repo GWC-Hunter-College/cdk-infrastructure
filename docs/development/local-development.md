@@ -94,7 +94,7 @@ cdk synth --all
 cdk diff STACK_NAME
 ```
 
-Expected `cdk list` output is the 11-stack inventory in [the stack catalogue](../architectures/serverless/stacks.md). The stub stack is intentionally absent because its entry-point constructor is commented out.
+Expected `cdk list` output is the 11-stack inventory in [the stack catalog](../architectures/serverless/stacks.md). The stub stack is intentionally absent because its entry-point constructor is commented out.
 
 Synthesis bundles each active `GoFunction` and builds the Docker image asset for `DatabaseInitStack`; Docker can therefore be required even when inspecting a different stack. The first run can be substantially slower while Go modules, CDK/jsii packages, Lambda binaries, and container layers are cached.
 

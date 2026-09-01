@@ -1,6 +1,16 @@
 # Event Management System backend and infrastructure
 
-This repository defines the AWS infrastructure and Go Lambda handlers for the Event Management System built for Girls Who Code at Hunter and other Hunter College clubs. The CDK application synthesizes **11 active stacks** for static frontends, networking, authentication, HTTP APIs, image storage, MySQL, database initialization, and private administrative access.
+This repository is the backend, API, data, authentication/authorization, and AWS infrastructure layer for Hunter College's club event-management ecosystem. It stores and serves club, event, description, tag, membership, permission, and image metadata for Girls Who Code at Hunter and the broader club-event experience.
+
+The public-facing club website and the administrative/event-management application live in separate repositories and consume this backend. This repository also provisions their S3 and CloudFront delivery infrastructure; it does not contain or build the frontend source.
+
+## High-level architecture
+
+![High-level architecture showing separate clients using CloudFront and private website buckets, Cognito, API Gateway, Lambda, an image bucket, and RDS](docs/assets/high-level-architecture.png)
+
+Client applications load the separately built frontends through CloudFront, authenticate with Cognito when required, and call the development or production HTTP API. Go Lambda handlers read and write MySQL data and create signed S3 requests; image bytes then transfer directly between the client and the private image bucket.
+
+The CDK application synthesizes **11 active stacks** for frontend delivery, networking, authentication, authorization, HTTP APIs, image storage, MySQL, database initialization, and private administrative access.
 
 The application currently provides:
 
@@ -16,9 +26,10 @@ The source of truth for stack composition is [`cdk-infrastructure.go`](cdk-infra
 
 ## Documentation
 
-- [Architecture overview](docs/architectures/serverless/overview.md) — system boundaries and request flows
+- [Architecture overview](docs/architecture/overview.md) — detailed system relationships and request flows
+- [Serverless implementation overview](docs/architectures/serverless/overview.md) — AWS boundaries, environments, and resources
 - [Infrastructure reference](docs/architectures/serverless/infrastructure.md) — VPC, APIs, Lambda, Cognito, RDS, S3, CloudFront, and IAM
-- [Stack catalogue](docs/architectures/serverless/stacks.md) — all 11 stacks, dependencies, values, and outputs
+- [Stack catalog](docs/architectures/serverless/stacks.md) — all 11 stacks, dependencies, values, and outputs
 - [API reference](docs/api/README.md) — active routes, request/response contracts, and route-level authentication
 - [Database reference](docs/database/README.md) — provisioning, initialization, and the implemented 13-table schema
 - [Authentication and authorization](docs/architecture/authentication.md) — Cognito identity flow and database role boundaries

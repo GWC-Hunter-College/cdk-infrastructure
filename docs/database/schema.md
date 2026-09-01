@@ -2,9 +2,17 @@
 
 This reference is derived from the active fresh-install migration, [`11_04_2025_create_core_tables_up.sql`](../../lambda/internal/database/init/migrations/11_04_2025_create_core_tables_up.sql). The initializer applies the same 13-table DDL to `STAGING` and `PRODUCTION`. See the [database overview](README.md) for provisioning and initialization behavior.
 
-The external [Hunter Club Event System dbdiagram](https://dbdiagram.io/d/Hunter-Club-Event-System-6861eb43f413ba35086e147c) is a supplementary project reference. Where it differs, the repository migration documented here is authoritative. The Mermaid overview uses logical type names for renderer compatibility; the tables below preserve the exact MySQL types.
+The committed dbdiagram export is the primary visual overview. The repository migration remains authoritative for exact types, nullability, defaults, indexes, and foreign-key behavior.
 
-## Entity relationships
+## Database schema
+
+![Current relational schema for students, clubs, memberships, events, descriptions, tags, images, and association tables](assets/database-schema.png)
+
+The image matches the active migration's 13 tables and high-level relationships. Its visual type label `EVENT_STATUS` represents the migration's inline `ENUM('drafted', 'posted', 'archived')`; the column tables below preserve the exact MySQL declaration. The external [Hunter Club Event System dbdiagram](https://dbdiagram.io/d/Hunter-Club-Event-System-6861eb43f413ba35086e147c) remains a supplementary interactive reference.
+
+## Maintainable relationship reference
+
+The Mermaid ERD is a secondary, text-maintainable view and uses logical type names for renderer compatibility.
 
 ```mermaid
 erDiagram

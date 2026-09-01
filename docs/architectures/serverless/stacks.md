@@ -1,4 +1,10 @@
-# Stack catalogue and dependencies
+# Stack catalog and dependencies
+
+## Stack architecture
+
+![Current CDK stack architecture showing all 11 active stacks and their synthesized CloudFormation dependencies](assets/stack-architecture.svg)
+
+This primary visual is a cleaned documentation derivative of the August 2025 Excalidraw. It preserves the hand-drawn stack-box layout while using the current stack names, responsibilities, and synthesized dependency directions. The [cleaned editable Excalidraw](assets/stack-architecture.excalidraw) is committed beside the SVG.
 
 ## Active stack count
 
@@ -18,9 +24,9 @@
 
 `StubLambdaStack` is source-only because its constructor call is commented out. It is not synthesized or deployed.
 
-## Synthesized dependency graph
+## Synthesized dependency reference
 
-Arrows point from a prerequisite stack to a consuming stack. The graph reflects CloudFormation stack dependencies in a synthesized cloud assembly; per-stack asset artifacts are omitted.
+The Mermaid graph is a secondary, text-maintainable reference. Arrows point from a prerequisite stack to a consuming stack. The graph reflects CloudFormation stack dependencies in a synthesized cloud assembly; per-stack asset artifacts are omitted.
 
 ```mermaid
 flowchart LR
@@ -63,7 +69,7 @@ flowchart LR
 
 Although the entry point passes `authorization.Authorizer` to `ProdApiStack`, the authorizer object binds the concrete `AWS::ApiGatewayV2::Authorizer` inside `ProdApiStack` and references the user pool/client from `AuthenticationStack`. The synthesized production stack therefore depends directly on `AuthenticationStack`, not on `AuthorizationStack`. This also means CloudFormation does not enforce an ordering between `AuthorizationStack` and `ProdApiStack`.
 
-## Stack catalogue
+## Stack catalog
 
 | Stack | Primary resources | Values consumed | Values made available |
 | --- | --- | --- | --- |
