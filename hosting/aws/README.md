@@ -6,14 +6,23 @@ This module contains the independent AWS CDK implementation for the repository's
 
 The Go CDK application synthesizes two environment-agnostic stacks:
 
-- Girls Who Code at Hunter uses `NewGirlsWhoCodeHostingStack` and `GirlsWhoCodeHostingStackProps`; its historical CDK/CloudFormation stack ID remains `FrontendStack`. Its private, fixed-name `gwc-club-site` S3 bucket supplies separate CloudFront distributions from the `/staging` and `/production` prefixes.
-- Hunter College Clubs / Event Manager uses `NewHunterCollegeClubsHostingStack` and `HunterCollegeClubsHostingStackProps`; its historical CDK/CloudFormation stack ID remains `FrontendHccStack`. Its private, fixed-name `hunter-college-club-event-site` S3 bucket supplies separate CloudFront distributions from the `/staging` and `/production` prefixes. It also creates the fixed-name `hcc-website-ci-deployer` IAM user and `frontend-hcc-ci-policy`, scoped to uploading/deleting site objects, listing that bucket, and invalidating the two Hunter College Clubs distributions. The stack does not create an IAM access key.
+- Girls Who Code at Hunter uses `NewGirlsWhoCodeHostingStack` and `GirlsWhoCodeHostingStackProps`; its historical CDK/CloudFormation stack ID remains `FrontendStack`. It defines the fixed-name `gwc-club-site` bucket and the `gwc-website-ci-deployer` user with the `frontend-gwc-ci-policy` policy.
+- Hunter College Clubs / Event Manager uses `NewHunterCollegeClubsHostingStack` and `HunterCollegeClubsHostingStackProps`; its historical CDK/CloudFormation stack ID remains `FrontendHccStack`. It defines the fixed-name `hunter-college-club-event-site` bucket and the `hcc-website-ci-deployer` user with the `frontend-hcc-ci-policy` policy.
 
-All four distributions redirect viewers to HTTPS, serve `index.html` by default, and return that SPA entry point with status 200 for S3 403 and 404 responses. Each bucket is private and grants CloudFront read access through an origin access identity (OAI).
+## What each stack creates
 
-This implementation defines S3, CloudFront, and the Hunter College Clubs deployment identity only. It does **not** define Route 53 records, ACM certificates, custom domains, frontend build artifacts, or an S3 deployment construct. Frontend delivery automation must build and upload assets to the documented prefixes separately.
+Both sites use the same independent hosting and deployment model:
 
-The reference repository used `/main` for the Girls Who Code non-production origin. This module intentionally uses `/staging` to match this project's integration branch while retaining the existing `FrontendMain` construct ID and `CloudFront_Main_Info` output ID. Coordinate the uploader so assets exist under `/staging`, and review the CloudFront origin-path change before any deployment.
+- **Private S3 bucket:** stores static build artifacts under separate `/staging` and `/production` prefixes.
+- **CloudFront origin access identity (OAI):** lets CloudFront read the private bucket without making its objects public. Both stacks currently use OAI, not OAC.
+- **Staging and production CloudFront distributions:** serve their matching S3 prefixes, redirect viewers to HTTPS, and use `index.html` as the default root object.
+- **SPA error responses:** translate S3 403 and 404 responses to `/index.html` with status 200 so client-side routes can load directly.
+- **CI deployment user and policy:** can upload or delete objects in only that site's bucket, list that bucket, and invalidate only that site's two distributions. Neither stack creates an IAM access key or outputs credentials.
+- **Outputs:** expose the bucket name, CloudFront URLs and distribution IDs, and staging and production S3 deployment destinations.
+
+This implementation defines S3, CloudFront, and a scoped deployment identity for each site. It does **not** define Route 53 records, ACM certificates, custom domains, frontend build artifacts, or an S3 deployment construct. Frontend delivery automation must build and upload assets to the documented prefixes separately.
+
+The reference repository used `/main` for the Girls Who Code non-production origin. This module intentionally uses `/staging` to match this project's integration branch while retaining the existing `FrontendMain` construct ID and `CloudFront_Main_Info` output ID. Hunter College Clubs uses the corresponding `FrontendStaging` and `CloudFront_Staging_Info` IDs. Existing Hunter College Clubs IAM/output IDs also remain unchanged, while the new Girls Who Code equivalents use explicit application names. These identity differences are intentional; the hosting behavior is parallel. Coordinate the uploader so assets exist under `/staging`, and review the CloudFront origin-path change before any deployment.
 
 ## Validate locally
 
@@ -32,7 +41,7 @@ cdk synth --all
 
 Do not deploy this extracted module until the owners of the existing frontend resources and CloudFormation stacks have reviewed a migration plan.
 
-- The extracted stacks deliberately retain the reference stack IDs, construct IDs, fixed physical bucket names, IAM user name, and IAM policy name. That preserves template identity only when the same existing CloudFormation stacks remain the owners. Deploying these definitions under different stack ownership can conflict with globally unique bucket names and account-unique IAM names, or create replacement/duplicate CloudFront resources.
+- The extracted stacks deliberately retain the historical stack IDs, construct IDs, and fixed physical bucket names. Hunter College Clubs also retains its existing IAM names; the new fixed Girls Who Code IAM names must be checked for account-level conflicts before deployment. Preserved template identity helps only when the same existing CloudFormation stacks remain the owners. Different stack ownership can cause fixed-name conflicts or replacement/duplicate CloudFront resources.
 - Do not deploy the hosting stacks from both this module and `infrastructure/legacy`. Existing resources may need to remain under their current stacks or be explicitly imported/adopted before this module becomes authoritative.
 - Both buckets use `RemovalPolicy_DESTROY` with automatic object deletion. Stack removal or a replacement that deletes the old bucket can permanently delete hosted assets.
 - The implementation retains the existing CloudFront OAI and `S3Origin` access design. A future move to origin access control (OAC) should be treated as a separate, reviewed infrastructure migration because it changes origin access and bucket-policy resources.
