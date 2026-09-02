@@ -32,13 +32,15 @@ func NewHunterCollegeClubsHostingStack(scope constructs.Construct, id string, pr
 		Value: hunterCollegeClubsWebsiteBucket.BucketName(),
 	})
 
-	hunterCollegeClubsOAI := awscloudfront.NewOriginAccessIdentity(hunterCollegeClubsHostingStack, jsii.String("FrontendOAI"), &awscloudfront.OriginAccessIdentityProps{})
-	hunterCollegeClubsWebsiteBucket.GrantRead(hunterCollegeClubsOAI, nil)
+	hunterCollegeClubsOAC := awscloudfront.NewS3OriginAccessControl(hunterCollegeClubsHostingStack, jsii.String("HunterCollegeClubsOAC"), &awscloudfront.S3OriginAccessControlProps{
+		Description: jsii.String("Hunter College Clubs / Event Manager S3 origin access control"),
+		Signing:     awscloudfront.Signing_SIGV4_ALWAYS(),
+	})
 
 	hunterCollegeClubsStagingBehavior := &awscloudfront.BehaviorOptions{
-		Origin: awscloudfrontorigins.NewS3Origin(hunterCollegeClubsWebsiteBucket, &awscloudfrontorigins.S3OriginProps{
-			OriginAccessIdentity: hunterCollegeClubsOAI,
-			OriginPath:           jsii.String("/staging"),
+		Origin: awscloudfrontorigins.S3BucketOrigin_WithOriginAccessControl(hunterCollegeClubsWebsiteBucket, &awscloudfrontorigins.S3BucketOriginWithOACProps{
+			OriginAccessControl: hunterCollegeClubsOAC,
+			OriginPath:          jsii.String("/staging"),
 		}),
 		ViewerProtocolPolicy: awscloudfront.ViewerProtocolPolicy_REDIRECT_TO_HTTPS,
 	}
@@ -69,9 +71,9 @@ func NewHunterCollegeClubsHostingStack(scope constructs.Construct, id string, pr
 	})
 
 	hunterCollegeClubsProductionBehavior := &awscloudfront.BehaviorOptions{
-		Origin: awscloudfrontorigins.NewS3Origin(hunterCollegeClubsWebsiteBucket, &awscloudfrontorigins.S3OriginProps{
-			OriginAccessIdentity: hunterCollegeClubsOAI,
-			OriginPath:           jsii.String("/production"),
+		Origin: awscloudfrontorigins.S3BucketOrigin_WithOriginAccessControl(hunterCollegeClubsWebsiteBucket, &awscloudfrontorigins.S3BucketOriginWithOACProps{
+			OriginAccessControl: hunterCollegeClubsOAC,
+			OriginPath:          jsii.String("/production"),
 		}),
 		ViewerProtocolPolicy: awscloudfront.ViewerProtocolPolicy_REDIRECT_TO_HTTPS,
 	}

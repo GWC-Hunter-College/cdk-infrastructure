@@ -32,13 +32,15 @@ func NewGirlsWhoCodeHostingStack(scope constructs.Construct, id string, props *G
 		Value: girlsWhoCodeWebsiteBucket.BucketName(),
 	})
 
-	girlsWhoCodeOAI := awscloudfront.NewOriginAccessIdentity(girlsWhoCodeHostingStack, jsii.String("FrontendOAI"), &awscloudfront.OriginAccessIdentityProps{})
-	girlsWhoCodeWebsiteBucket.GrantRead(girlsWhoCodeOAI, nil)
+	girlsWhoCodeOAC := awscloudfront.NewS3OriginAccessControl(girlsWhoCodeHostingStack, jsii.String("GirlsWhoCodeOAC"), &awscloudfront.S3OriginAccessControlProps{
+		Description: jsii.String("Girls Who Code at Hunter S3 origin access control"),
+		Signing:     awscloudfront.Signing_SIGV4_ALWAYS(),
+	})
 
 	girlsWhoCodeStagingBehavior := &awscloudfront.BehaviorOptions{
-		Origin: awscloudfrontorigins.NewS3Origin(girlsWhoCodeWebsiteBucket, &awscloudfrontorigins.S3OriginProps{
-			OriginAccessIdentity: girlsWhoCodeOAI,
-			OriginPath:           jsii.String("/staging"),
+		Origin: awscloudfrontorigins.S3BucketOrigin_WithOriginAccessControl(girlsWhoCodeWebsiteBucket, &awscloudfrontorigins.S3BucketOriginWithOACProps{
+			OriginAccessControl: girlsWhoCodeOAC,
+			OriginPath:          jsii.String("/staging"),
 		}),
 		ViewerProtocolPolicy: awscloudfront.ViewerProtocolPolicy_REDIRECT_TO_HTTPS,
 	}
@@ -70,9 +72,9 @@ func NewGirlsWhoCodeHostingStack(scope constructs.Construct, id string, props *G
 	})
 
 	girlsWhoCodeProductionBehavior := &awscloudfront.BehaviorOptions{
-		Origin: awscloudfrontorigins.NewS3Origin(girlsWhoCodeWebsiteBucket, &awscloudfrontorigins.S3OriginProps{
-			OriginAccessIdentity: girlsWhoCodeOAI,
-			OriginPath:           jsii.String("/production"),
+		Origin: awscloudfrontorigins.S3BucketOrigin_WithOriginAccessControl(girlsWhoCodeWebsiteBucket, &awscloudfrontorigins.S3BucketOriginWithOACProps{
+			OriginAccessControl: girlsWhoCodeOAC,
+			OriginPath:          jsii.String("/production"),
 		}),
 		ViewerProtocolPolicy: awscloudfront.ViewerProtocolPolicy_REDIRECT_TO_HTTPS,
 	}
