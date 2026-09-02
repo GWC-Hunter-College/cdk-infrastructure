@@ -6,14 +6,14 @@ This module contains the independent AWS CDK implementation for the repository's
 
 The Go CDK application synthesizes two environment-agnostic stacks:
 
-- `FrontendStack` hosts Girls Who Code at Hunter. Its private, fixed-name `gwc-club-site` S3 bucket supplies separate CloudFront distributions from the `/staging` and `/production` prefixes.
-- `FrontendHccStack` hosts Hunter College Clubs / Event Manager. Its private, fixed-name `hunter-college-club-event-site` S3 bucket supplies separate CloudFront distributions from the `/staging` and `/production` prefixes. It also creates the fixed-name `hcc-website-ci-deployer` IAM user and `frontend-hcc-ci-policy`, scoped to uploading/deleting site objects, listing that bucket, and invalidating the two HCC distributions. The stack does not create an IAM access key.
+- Girls Who Code at Hunter uses `NewGirlsWhoCodeHostingStack` and `GirlsWhoCodeHostingStackProps`; its historical CDK/CloudFormation stack ID remains `FrontendStack`. Its private, fixed-name `gwc-club-site` S3 bucket supplies separate CloudFront distributions from the `/staging` and `/production` prefixes.
+- Hunter College Clubs / Event Manager uses `NewHunterCollegeClubsHostingStack` and `HunterCollegeClubsHostingStackProps`; its historical CDK/CloudFormation stack ID remains `FrontendHccStack`. Its private, fixed-name `hunter-college-club-event-site` S3 bucket supplies separate CloudFront distributions from the `/staging` and `/production` prefixes. It also creates the fixed-name `hcc-website-ci-deployer` IAM user and `frontend-hcc-ci-policy`, scoped to uploading/deleting site objects, listing that bucket, and invalidating the two Hunter College Clubs distributions. The stack does not create an IAM access key.
 
 All four distributions redirect viewers to HTTPS, serve `index.html` by default, and return that SPA entry point with status 200 for S3 403 and 404 responses. Each bucket is private and grants CloudFront read access through an origin access identity (OAI).
 
-This implementation defines S3, CloudFront, and the HCC deployment identity only. It does **not** define Route 53 records, ACM certificates, custom domains, frontend build artifacts, or an S3 deployment construct. Frontend delivery automation must build and upload assets to the documented prefixes separately.
+This implementation defines S3, CloudFront, and the Hunter College Clubs deployment identity only. It does **not** define Route 53 records, ACM certificates, custom domains, frontend build artifacts, or an S3 deployment construct. Frontend delivery automation must build and upload assets to the documented prefixes separately.
 
-The reference repository used `/main` for the GWC non-production origin. This module intentionally uses `/staging` to match this project's integration branch while retaining the existing `FrontendMain` construct ID and `CloudFront_Main_Info` output ID. Coordinate the uploader so assets exist under `/staging`, and review the CloudFront origin-path change before any deployment.
+The reference repository used `/main` for the Girls Who Code non-production origin. This module intentionally uses `/staging` to match this project's integration branch while retaining the existing `FrontendMain` construct ID and `CloudFront_Main_Info` output ID. Coordinate the uploader so assets exist under `/staging`, and review the CloudFront origin-path change before any deployment.
 
 ## Validate locally
 

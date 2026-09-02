@@ -9,43 +9,43 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
-type FrontendStackProps struct {
+type GirlsWhoCodeHostingStackProps struct {
 	Props awscdk.StackProps
 }
 
-func NewFrontendStack(scope constructs.Construct, id string, props *FrontendStackProps) awscdk.Stack {
+func NewGirlsWhoCodeHostingStack(scope constructs.Construct, id string, props *GirlsWhoCodeHostingStackProps) awscdk.Stack {
 	var stackProps awscdk.StackProps
 	if props != nil {
 		stackProps = props.Props
 	}
-	stack := awscdk.NewStack(scope, &id, &stackProps)
+	girlsWhoCodeHostingStack := awscdk.NewStack(scope, &id, &stackProps)
 
-	websiteBucket := awss3.NewBucket(stack, jsii.String("GwcWebsiteBucket"), &awss3.BucketProps{
+	girlsWhoCodeWebsiteBucket := awss3.NewBucket(girlsWhoCodeHostingStack, jsii.String("GwcWebsiteBucket"), &awss3.BucketProps{
 		BucketName:        jsii.String("gwc-club-site"),
 		PublicReadAccess:  jsii.Bool(false),
 		RemovalPolicy:     awscdk.RemovalPolicy_DESTROY,
 		AutoDeleteObjects: jsii.Bool(true),
 	})
 
-	awscdk.NewCfnOutput(stack, jsii.String("websiteBucketName"), &awscdk.CfnOutputProps{
-		Value: websiteBucket.BucketName(),
+	awscdk.NewCfnOutput(girlsWhoCodeHostingStack, jsii.String("websiteBucketName"), &awscdk.CfnOutputProps{
+		Value: girlsWhoCodeWebsiteBucket.BucketName(),
 	})
 
-	cloudfrontOAI := awscloudfront.NewOriginAccessIdentity(stack, jsii.String("FrontendOAI"), &awscloudfront.OriginAccessIdentityProps{})
-	websiteBucket.GrantRead(cloudfrontOAI, nil)
+	girlsWhoCodeOAI := awscloudfront.NewOriginAccessIdentity(girlsWhoCodeHostingStack, jsii.String("FrontendOAI"), &awscloudfront.OriginAccessIdentityProps{})
+	girlsWhoCodeWebsiteBucket.GrantRead(girlsWhoCodeOAI, nil)
 
-	cloudfrontStagingBehavior := &awscloudfront.BehaviorOptions{
-		Origin: awscloudfrontorigins.NewS3Origin(websiteBucket, &awscloudfrontorigins.S3OriginProps{
-			OriginAccessIdentity: cloudfrontOAI,
+	girlsWhoCodeStagingBehavior := &awscloudfront.BehaviorOptions{
+		Origin: awscloudfrontorigins.NewS3Origin(girlsWhoCodeWebsiteBucket, &awscloudfrontorigins.S3OriginProps{
+			OriginAccessIdentity: girlsWhoCodeOAI,
 			OriginPath:           jsii.String("/staging"),
 		}),
 		ViewerProtocolPolicy: awscloudfront.ViewerProtocolPolicy_REDIRECT_TO_HTTPS,
 	}
 
-	// Keep the reference construct ID stable while serving the staging branch.
-	frontendStaging := awscloudfront.NewDistribution(stack, jsii.String("FrontendMain"), &awscloudfront.DistributionProps{
+	// Keep the historical FrontendMain construct ID stable while serving the staging branch.
+	girlsWhoCodeStagingDistribution := awscloudfront.NewDistribution(girlsWhoCodeHostingStack, jsii.String("FrontendMain"), &awscloudfront.DistributionProps{
 		DefaultRootObject: jsii.String("index.html"),
-		DefaultBehavior:   cloudfrontStagingBehavior,
+		DefaultBehavior:   girlsWhoCodeStagingBehavior,
 		ErrorResponses: &[]*awscloudfront.ErrorResponse{
 			{
 				HttpStatus:         jsii.Number(404),
@@ -62,23 +62,23 @@ func NewFrontendStack(scope constructs.Construct, id string, props *FrontendStac
 		},
 	})
 
-	awscdk.NewCfnOutput(stack, jsii.String("CloudFront_Main_Info"), &awscdk.CfnOutputProps{
+	awscdk.NewCfnOutput(girlsWhoCodeHostingStack, jsii.String("CloudFront_Main_Info"), &awscdk.CfnOutputProps{
 		Description: jsii.String("Staging Branch CloudFront Info"),
-		Value: jsii.String("Staging URL: https://" + *frontendStaging.DomainName() +
-			" | ID: " + *frontendStaging.DistributionId()),
+		Value: jsii.String("Staging URL: https://" + *girlsWhoCodeStagingDistribution.DomainName() +
+			" | ID: " + *girlsWhoCodeStagingDistribution.DistributionId()),
 	})
 
-	cloudfrontProductionBehavior := &awscloudfront.BehaviorOptions{
-		Origin: awscloudfrontorigins.NewS3Origin(websiteBucket, &awscloudfrontorigins.S3OriginProps{
-			OriginAccessIdentity: cloudfrontOAI,
+	girlsWhoCodeProductionBehavior := &awscloudfront.BehaviorOptions{
+		Origin: awscloudfrontorigins.NewS3Origin(girlsWhoCodeWebsiteBucket, &awscloudfrontorigins.S3OriginProps{
+			OriginAccessIdentity: girlsWhoCodeOAI,
 			OriginPath:           jsii.String("/production"),
 		}),
 		ViewerProtocolPolicy: awscloudfront.ViewerProtocolPolicy_REDIRECT_TO_HTTPS,
 	}
 
-	frontendProduction := awscloudfront.NewDistribution(stack, jsii.String("FrontendProduction"), &awscloudfront.DistributionProps{
+	girlsWhoCodeProductionDistribution := awscloudfront.NewDistribution(girlsWhoCodeHostingStack, jsii.String("FrontendProduction"), &awscloudfront.DistributionProps{
 		DefaultRootObject: jsii.String("index.html"),
-		DefaultBehavior:   cloudfrontProductionBehavior,
+		DefaultBehavior:   girlsWhoCodeProductionBehavior,
 		ErrorResponses: &[]*awscloudfront.ErrorResponse{
 			{
 				HttpStatus:         jsii.Number(404),
@@ -95,11 +95,11 @@ func NewFrontendStack(scope constructs.Construct, id string, props *FrontendStac
 		},
 	})
 
-	awscdk.NewCfnOutput(stack, jsii.String("CloudFront_Production_Info"), &awscdk.CfnOutputProps{
+	awscdk.NewCfnOutput(girlsWhoCodeHostingStack, jsii.String("CloudFront_Production_Info"), &awscdk.CfnOutputProps{
 		Description: jsii.String("Production Branch CloudFront Info"),
-		Value: jsii.String("Production URL: https://" + *frontendProduction.DomainName() +
-			" | ID: " + *frontendProduction.DistributionId()),
+		Value: jsii.String("Production URL: https://" + *girlsWhoCodeProductionDistribution.DomainName() +
+			" | ID: " + *girlsWhoCodeProductionDistribution.DistributionId()),
 	})
 
-	return stack
+	return girlsWhoCodeHostingStack
 }

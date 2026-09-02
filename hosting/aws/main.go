@@ -7,22 +7,29 @@ import (
 	"github.com/GWC-Hunter-College/cdk-infrastructure/hosting/aws/internal/stack"
 )
 
+// Keep the historical CDK stack IDs until existing CloudFormation ownership is
+// reviewed. The Go symbols remain explicit about the application each stack hosts.
+const (
+	girlsWhoCodeHostingStackID       = "FrontendStack"
+	hunterCollegeClubsHostingStackID = "FrontendHccStack"
+)
+
 func main() {
 	defer jsii.Close()
 
 	app := awscdk.NewApp(nil)
 
-	stack.NewFrontendStack(app, "FrontendStack", &stack.FrontendStackProps{
+	stack.NewGirlsWhoCodeHostingStack(app, girlsWhoCodeHostingStackID, &stack.GirlsWhoCodeHostingStackProps{
 		Props: awscdk.StackProps{
 			Env:         environment(),
-			Description: jsii.String("Stack for the GWC website deployment"),
+			Description: jsii.String("Girls Who Code at Hunter website hosting"),
 		},
 	})
 
-	stack.NewFrontendHccStack(app, "FrontendHccStack", &stack.FrontendHccStackProps{
+	stack.NewHunterCollegeClubsHostingStack(app, hunterCollegeClubsHostingStackID, &stack.HunterCollegeClubsHostingStackProps{
 		Props: awscdk.StackProps{
 			Env:         environment(),
-			Description: jsii.String("Stack for the EMS website deployment"),
+			Description: jsii.String("Hunter College Clubs / Event Manager website hosting"),
 		},
 	})
 
