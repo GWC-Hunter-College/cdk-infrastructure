@@ -148,6 +148,7 @@ func NewGirlsWhoCodeHostingStack(scope constructs.Construct, id string, props *G
 	girlsWhoCodeCIUser := awsiam.NewUser(girlsWhoCodeHostingStack, jsii.String("GirlsWhoCodeCiUser"), &awsiam.UserProps{
 		UserName: jsii.String("gwc-website-ci-deployer"),
 	})
+	girlsWhoCodeCIUser.ApplyRemovalPolicy(awscdk.RemovalPolicy_DESTROY)
 	girlsWhoCodeCIPolicy.AttachToUser(girlsWhoCodeCIUser)
 
 	awscdk.NewCfnOutput(girlsWhoCodeHostingStack, jsii.String("GirlsWhoCodeS3StagingDestination"), &awscdk.CfnOutputProps{

@@ -147,6 +147,7 @@ func NewHunterCollegeClubsHostingStack(scope constructs.Construct, id string, pr
 	hunterCollegeClubsCIUser := awsiam.NewUser(hunterCollegeClubsHostingStack, jsii.String("FrontendCiUser"), &awsiam.UserProps{
 		UserName: jsii.String("hcc-website-ci-deployer"),
 	})
+	hunterCollegeClubsCIUser.ApplyRemovalPolicy(awscdk.RemovalPolicy_DESTROY)
 	hunterCollegeClubsCIPolicy.AttachToUser(hunterCollegeClubsCIUser)
 
 	awscdk.NewCfnOutput(hunterCollegeClubsHostingStack, jsii.String("S3_Staging_Destination"), &awscdk.CfnOutputProps{
