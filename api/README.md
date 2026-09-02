@@ -33,20 +33,31 @@ For inactive historical routes, the detailed **Authentication** field distinguis
 
 ## Migration summary
 
-This inventory contains **44 HTTP endpoint entries**:
+The counts are kept in two non-additive views because the historical list overlaps the active API and several routes changed shape.
+
+### Active legacy API
 
 | Status | Count |
 | --- | ---: |
 | ✅ Implemented | 15 |
-| 🟨 Partial | 16 |
-| ⬜ Not found | 13 |
+| 🟨 Partial | 3 |
+| ⬜ Not found | 0 |
 | ❓ Ambiguous | 0 |
+| **Active HTTP routes** | **18** |
 
-The 44 entries comprise:
+The active access configuration is 12 🟢 public routes and 6 🔴 Cognito-JWT routes. There is no API-wide default authorizer.
 
-- **18 active routes:** 15 ✅ and 3 🟨.
-- **26 historical, replacement, or supporting candidates:** 13 🟨 and 13 ⬜.
-- **1 internal non-HTTP function** documented separately; it is not included in the HTTP counts.
+### Historical “Endpoints Revamp” reconciliation
+
+| Status | Count |
+| --- | ---: |
+| ✅ Implemented at the historical route/intent | 8 |
+| 🟨 Partial, moved, stubbed, or incomplete | 16 |
+| ⬜ No executable implementation found | 11 |
+| ❓ Ambiguous | 0 |
+| **Historical items** | **35** |
+
+Two blue/internal functions are documented: the current Cognito student synchronization (✅) and the historical generic image metadata write (🟨). They are not active HTTP routes.
 
 The three active partial routes are:
 
@@ -68,17 +79,19 @@ The inventory was checked against:
 - image/S3 integrations and Cognito trigger wiring; and
 - the inactive stub stack and stub handlers, which count only as partial evidence.
 
-The historical `GWC Website Documentation.pdf`, preserved in the pre-refactor reference material, supplied the route grouping, intent, and green/red/blue visual model. Its checkmarks, assignments, dates, and project-management notes were not used as implementation evidence. Relevant historical sections are the original endpoint list (pages 14–18), “Endpoints Revamp” (pages 20–25), and image-upload flow (pages 33–35).
+The locally available pre-refactor stash copy of `GWC Website Documentation.pdf` supplied the route grouping, intent, and green/red/blue visual model; the PDF is not tracked in the current branch. Its checkmarks, assignments, dates, and project-management notes were not used as implementation evidence. Relevant historical sections are the original endpoint list (pages 14–18), “Endpoints Revamp” (pages 20–25), and image-upload flow (pages 33–35).
 
 ## Planned API directory structure
 
-The following tree is **planned documentation only**. These directories do not exist yet and should be created incrementally as behavior is migrated and tested.
+The following tree is a **representative planned skeleton only**. These directories do not exist yet and should be created incrementally as behavior is migrated and tested. Some leaf operations are collapsed for readability; the per-endpoint target paths below are the complete migration mapping.
 
 ```text
 api/
 ├── internal/
-│   └── students/
-│       └── sync/
+│   ├── students/
+│   │   └── sync/
+│   └── images/
+│       └── confirm/
 ├── me/
 │   ├── get/
 │   ├── clubs/
@@ -100,6 +113,9 @@ api/
 │       │   ├── list/
 │       │   ├── drafts/
 │       │   └── create/
+│       ├── verification/
+│       │   ├── create/
+│       │   └── delete/
 │       └── thumbnails/
 │           ├── presign/
 │           └── confirm/
@@ -118,7 +134,14 @@ api/
 │           ├── images/
 │           └── thumbnails/
 ├── admins/
+│   ├── list/
+│   ├── create/
+│   └── {studentId}/
+│       ├── get/
+│       └── delete/
 ├── images/
+│   └── {imageId}/
+│       └── delete/
 ├── operations/
 │   └── health/
 ├── shared/
@@ -149,7 +172,49 @@ Route-shaped folders are navigation aids, not a reason to duplicate shared autho
 | Club/event thumbnail confirmations | Presign handlers exist, but neither confirmation/metadata-assignment route exists. |
 | Original club-scoped event detail/update/delete | The PDF later proposed `/auth/events`; neither protected form is active. Only club-scoped media paths remain. |
 
-## Internal / student registration
+### Historical endpoint checklist
+
+This compact view preserves every item in the historical “Endpoints Revamp.” The detailed sections below de-duplicate moved/reused behavior and provide the actual paths needed for migration.
+
+| Historical route/function | Status | Current finding |
+| --- | --- | --- |
+| Register Lambda | ✅ | Cognito student upsert handler/query are active as an internal trigger. |
+| `GET /me/clubs` | ✅ | Exact active protected route. |
+| `GET /me/clubs/events` | 🟨 | Complete behavior moved to `GET /me/events`; exact path is an inactive stub. |
+| `GET /me/clubs/eboard` | 🟨 | Inactive hard-coded stub and stale SQL only. |
+| `POST /clubs` | ✅ | Exact active protected route. |
+| `POST /clubs/thumbnails` | 🟨 | Active replacement is public `POST /clubs/{clubId}/thumbnails` with a JSON body. |
+| `GET /clubs/{clubId}` | ✅ | Exact active public route. |
+| `GET /clubs/{clubId}/members` | ⬜ | Placeholder text only; no route, handler, or query. |
+| `GET /clubs/{clubId}/eboard` | ⬜ | No route, handler, or list query. |
+| `POST /clubs/{clubId}/members` | 🟨 | Active replacement is caller-only `POST .../members/me`. |
+| `PUT /clubs/{clubId}/members/roles` | ⬜ | No route, handler, owner-only check, or update query. |
+| `DELETE /clubs/{clubId}/members/me` | 🟨 | Handler/query exist, but the active route omits the JWT authorizer. |
+| `GET /clubs/{clubId}/events` | ✅ | Exact active public route. |
+| `GET /clubs/{clubId}/events/drafts` | ⬜ | No active route/handler; only reusable status-filtered SQL support. |
+| `POST /clubs/{clubId}/events` | 🟨 | Active route exists, but SQL is invalid and club-role authorization is absent. |
+| `GET /events` | ✅ | Exact active public posted-event route. |
+| `GET /events/{eventId}` | ✅ | Exact active public posted-event route. |
+| `GET /events/{eventId}/images` | 🟨 | Exact path is an inactive stub; changed club-scoped active read lacks its SQL. |
+| `GET /events/{eventId}/description` | 🟨 | Dedicated path inactive; real event detail includes description. |
+| `GET /events/{eventId}/clubs` | 🟨 | Dedicated path inactive; real event detail includes owner/associate IDs. |
+| `GET /auth/events/{eventId}` | 🟨 | Public read and unused authorization helper exist separately; no composed protected route. |
+| `GET /auth/events/{eventId}/images` | 🟨 | Public changed-path handler exists but lacks SQL and authorization. |
+| `PATCH /auth/events/{eventId}` | ⬜ | No update handler or query. |
+| `POST /auth/events/{eventId}/thumbnails` | 🟨 | Public club-scoped S3 signer exists; authorization and confirmation do not. |
+| `POST /auth/events/{eventId}/images` | 🟨 | Public club-scoped S3 signer/confirmation exist; authorization does not. |
+| `DELETE /auth/events/{eventId}` | ⬜ | No archive/delete handler or query. |
+| `GET /admins` | ⬜ | Planning text/schema only. |
+| `GET /admins/{studentId}` | 🟨 | Unwired SQL stub hardcodes an obsolete numeric student ID. |
+| `POST /admins` | ⬜ | No route, handler, insert query, or admin check. |
+| `DELETE /admins/{studentId}` | 🟨 | Unwired SQL stub hardcodes an obsolete numeric student ID. |
+| `GET /clubs?verified=true` | ✅ | Implemented by active `GET /clubs` query-parameter handling. |
+| `POST /clubs/{clubId}/verification` | ⬜ | Schema/read support only; no write operation. |
+| `DELETE /clubs/{clubId}/verification` | ⬜ | Schema/read support only; no write operation. |
+| Internal `POST /images` | 🟨 | Generic function absent; metadata insertion exists in event-image confirmation. |
+| `DELETE /images/{imageId}` | ⬜ | No database or storage deletion workflow. |
+
+## Internal student registration
 
 ### 🔵 ✅ Cognito student synchronization
 
@@ -157,7 +222,7 @@ Route-shaped folders are navigation aids, not a reason to duplicate shared autho
 
 **Invocation:** Cognito `PostConfirmation_ConfirmSignUp` and `PostAuthentication_Authentication`; not API Gateway.
 
-**Legacy implementation:** [`lambda/internal/auth/postConfirm/upsert.go`](../infrastructure/legacy/lambda/internal/auth/postConfirm/upsert.go), wired by [`authorization.go`](../infrastructure/legacy/internal/stack/authorization.go) and the development API authorizer setup.
+**Legacy implementation:** [`lambda/internal/auth/postConfirm/upsert.go`](../infrastructure/legacy/lambda/internal/auth/postConfirm/upsert.go), wired by [`authorization.go`](../infrastructure/legacy/internal/stack/authorization.go) and [`developmentApi.go`](../infrastructure/legacy/internal/stack/developmentApi.go).
 
 **Database query:** [Student existence and upsert](../database/README.md#1-student-existence-and-upsert) — [`students/UPSERT_student.sql`](../infrastructure/legacy/utils/query_client/queries/students/UPSERT_student.sql).
 
@@ -861,9 +926,9 @@ The historical design required every admin route to verify the caller is already
 
 **Notes:** A last-admin/self-demotion policy requires manual product review.
 
-## Verification / club administration
+## Verification and club administration
 
-Public verification reads are already implemented by [`GET /clubs?verified=true`](#-get-clubs). The historical write routes below are not.
+Public verification reads are already implemented by [`GET /clubs?verified=true`](#clubs). The historical write routes below are not.
 
 ### 🔴 ⬜ POST `/clubs/{clubId}/verification`
 
@@ -1076,3 +1141,81 @@ The current image flow signs short-lived S3 URLs so clients transfer bytes direc
 **Portable:** N/A until implemented.
 
 **Notes:** Define link cleanup, thumbnail foreign-key clearing, object deletion ordering, failure recovery, and orphan retention before implementation.
+
+## Operational routes
+
+### 🟢 ✅ GET `/health`
+
+**Purpose:** Returns a fixed “server running” response for basic API reachability.
+
+**Authentication:** None.
+
+**Legacy route:** [`gateway/routes/test_routes.go`](../infrastructure/legacy/gateway/routes/test_routes.go), registered by both active API stacks.
+
+**Legacy handler:** [`lambda/api/test/ping/main.go`](../infrastructure/legacy/lambda/api/test/ping/main.go).
+
+**Database query:** N/A.
+
+**Authorization dependencies:** None.
+
+**Target API location:** `api/operations/health/get/` (**planned**).
+
+**Target database query location:** N/A.
+
+**Portable:** Yes, after extracting the Lambda/API Gateway adapter.
+
+**Notes:** Decide later whether liveness and readiness are separate; this handler currently proves only that Lambda executed, not database or storage health.
+
+### 🟢 🟨 GET `/database/test`
+
+**Purpose:** Dormant connectivity diagnostic that opens the configured MySQL connection and evaluates `SELECT 1 + 1`.
+
+**Authentication:** The helper would be public if registered, but neither active API stack calls it.
+
+**Legacy implementation:** Route helper [`gateway/routes/database_routes.go`](../infrastructure/legacy/gateway/routes/database_routes.go), integration [`gateway/integrations/test_database.go`](../infrastructure/legacy/gateway/integrations/test_database.go), and handler [`lambda/api/database/test/main.go`](../infrastructure/legacy/lambda/api/database/test/main.go).
+
+**Database query:** Embedded diagnostic SQL, not an application query group.
+
+**Authorization dependencies:** None in the dormant registration.
+
+**Target API location:** No public business route is planned. Move equivalent coverage to protected operational diagnostics or integration tests.
+
+**Target database query location:** N/A.
+
+**Portable:** Partial as a connectivity test; it should not be migrated as a public API contract.
+
+**Notes:** The source exists, but inactive wiring means this is not one of the 18 active routes.
+
+## Recommended migration order
+
+1. Define provider-neutral request, response, identity, database, and storage interfaces while snapshot-testing current response contracts.
+2. Port shared identity extraction, student synchronization, validation, response mapping, and authorization policies once; remove duplicate role-helper implementations during that later migration.
+3. Port the implemented read routes and their query groups before write workflows.
+4. Port club membership and club creation with explicit decisions for route authorization and creator ownership.
+5. Repair and transaction-test event creation before exposing it from the new module.
+6. Introduce the storage-provider abstraction, then migrate presign, confirmation, and gallery-read behavior with authorization and lifecycle tests.
+7. Implement historically planned routes only after their product/authorization decisions are approved; do not create empty endpoint folders solely to mirror this document.
+8. Switch API Gateway/Lambda wiring only after parity tests pass. Keep `infrastructure/legacy/` as the working reference until an independently reviewed cutover.
+
+## Manual review required
+
+- Choose canonical protected event routes: historical `/auth/events/{eventId}` versus current club-scoped media paths.
+- Decide whether club creation automatically grants ownership and whether creation requires an existing admin.
+- Define owner-only versus e-board-or-owner policy for member-role changes.
+- Define admin bootstrap, self-demotion, and last-admin protections.
+- Correct the active leave-route authorizer mismatch without treating this documentation pass as the behavior change.
+- Define event publication/update/archive semantics, including `status`, `deleted_at`, and associated-club changes.
+- Define image authorization, content validation, S3 existence verification, confirmation transactions, replacement cleanup, and deletion recovery.
+- Resolve current pagination/grouping and response-shape quirks through tests before deciding whether migration means strict parity or a versioned contract change.
+- Review Cognito trigger ownership: the student-sync function is instantiated/wired in two stacks, and Cognito trigger slots are singleton configuration.
+
+## Current versus planned state
+
+- `api/README.md`: migration map only.
+- `api/`: no migrated handler implementation yet.
+- [`infrastructure/legacy/lambda/api/`](../infrastructure/legacy/lambda/api/): current handler source.
+- [`infrastructure/legacy/gateway/`](../infrastructure/legacy/gateway/): current API Gateway route/integration source.
+- [`infrastructure/legacy/utils/auth/`](../infrastructure/legacy/utils/auth/): current authentication/authorization helper source.
+- [`database/README.md`](../database/README.md): linked query and schema migration map.
+
+This pass changes documentation only. It does not move handlers, alter route/auth behavior, change response formats, or deploy anything.
