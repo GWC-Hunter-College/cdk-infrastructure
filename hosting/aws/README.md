@@ -25,6 +25,72 @@ Girls Who Code production also uses an ACM certificate and Route 53 A/AAAA alias
 
 The reference repository used `/main` for the Girls Who Code non-production origin. This module intentionally uses `/staging` to match this project's integration branch while retaining the existing `FrontendMain` construct ID and `CloudFront_Main_Info` output ID. Hunter College Clubs uses the corresponding `FrontendStaging` and `CloudFront_Staging_Info` IDs. Existing Hunter College Clubs IAM/output IDs also remain unchanged, while the new Girls Who Code equivalents use explicit application names. These identity differences are intentional; the hosting behavior is parallel. Coordinate the uploader so assets exist under `/staging`, and review the CloudFront origin-path change before any deployment.
 
+## Optional domains and resource ownership
+
+`GirlsWhoCodeHostingStackProps.DomainName` and `HostedZone` are optional as a
+pair. Omitting both (including passing `nil` props) creates core hosting only:
+the S3 bucket, OAC, staging/production CloudFront distributions, generated
+CloudFront URL outputs, and deployment IAM resources. That configuration has no
+ACM certificate, Route 53 resources, CloudFront custom aliases, CloudFormation
+imports, or dependency on a domain stack. Supplying only one domain prop is an
+error so a partial configuration cannot silently detach DNS.
+
+The current `main.go` deliberately still supplies both values for the live GWC
+site. Its dependency remains `FrontendStack → GirlsWhoCodeDomainStack` (arrow
+means **depends on**), via an automatic hosted-zone ID export/import used by ACM
+DNS validation and the four alias records. There is no explicit dependency or
+reverse reference. The `DomainName` prop is a plain configuration string and
+does not itself create an import.
+
+The domain-stack implementation already takes a caller-supplied domain name and
+stack ID, so it can provision a zone for another site without copying code.
+Its historical Go names and internal hosted-zone construct ID are retained;
+renaming them adds no capability. Hosting accepts an `IPublicHostedZone`, so a
+caller can also supply a reference to an existing zone without creating a domain
+stack. For the live GWC zone, keep using the existing managed construct in
+`main.go`: do not add a second zone stack or switch its ownership to an import.
+
+The certificate and DNS records stay in their existing `FrontendStack` scopes.
+Moving them into the zone stack would change CloudFormation ownership and could
+create a circular dependency because the records target the frontend's local
+production distribution. Optional domain support does not require that migration.
+
+Hunter College Clubs already uses independent `FrontendHccStack` hosting. Its
+current constructor receives no domain configuration and creates no hosted zone,
+DNS records, or certificate. There is no Hunter domain stack in `main.go`. A
+future real domain can use the same zone provisioning implementation with its
+own stack identity and explicit hosting integration; no Hunter domain attachment
+or placeholder domain is created by this refactor.
+
+The domainless constructor path is for sites configured without a domain. **Do
+not remove the existing GWC domain props or domain-stack instance from main.go**:
+that would request removal of its working certificate, aliases, and DNS records.
+Optional props do not make detaching a live domain a harmless operation. Likewise,
+the GWC hosting constructor retains GWC's fixed physical bucket/IAM names; use
+the dedicated Hunter constructor for Hunter rather than deploying a second copy
+of GWC hosting.
+
+The deployed identities remain:
+
+| Stack | Resource | Logical ID |
+| --- | --- | --- |
+| `GirlsWhoCodeDomainStack` | Public zone | `GirlsWhoCodeHostedZoneDBA9EB09` |
+| `FrontendStack` | S3 bucket | `GwcWebsiteBucketE6A54810` |
+| `FrontendStack` | Staging distribution | `FrontendMain4FAF8302` |
+| `FrontendStack` | Production distribution | `FrontendProduction57D7F36D` |
+| `FrontendStack` | Certificate | `GirlsWhoCodeProductionCertificate70C3275C` |
+
+The four alias-record IDs, zone export, stack environments, and deployment IAM
+identities are also preserved. The zone keeps both `DeletionPolicy: Retain` and
+`UpdateReplacePolicy: Retain`. Existing bucket auto-delete and IAM user delete
+policies remain unchanged; this refactor does not add retention to those resources.
+
+Validation covers GWC with a domain, GWC without a domain (nil and stack-only
+props), domainless Hunter hosting, and rejection of partial domain configuration.
+For the unchanged live configuration, synthesis should produce the same templates
+and `cdk diff GirlsWhoCodeDomainStack FrontendStack --no-change-set` should report
+no differences. This diff reads deployed templates without creating change sets.
+
 ## Validate locally
 
 From this directory:

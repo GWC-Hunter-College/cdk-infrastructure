@@ -14,15 +14,18 @@ import (
 )
 
 type GirlsWhoCodeHostingStackProps struct {
-	Props      awscdk.StackProps
+	Props awscdk.StackProps
+	// DomainName and HostedZone are optional, but must be supplied together.
+	// Omit both for CloudFront-only hosting. Keep both for the live GWC site.
 	DomainName string
 	HostedZone awsroute53.IPublicHostedZone
 }
 
 func NewGirlsWhoCodeHostingStack(scope constructs.Construct, id string, props *GirlsWhoCodeHostingStackProps) awscdk.Stack {
-	if props == nil || props.DomainName == "" || props.HostedZone == nil {
-		panic("GirlsWhoCodeHostingStack requires DomainName and HostedZone")
+	if props != nil && (props.DomainName == "") != (props.HostedZone == nil) {
+		panic("GirlsWhoCodeHostingStack requires DomainName and HostedZone together, or neither")
 	}
+	hasCustomDomain := props != nil && props.DomainName != ""
 	var stackProps awscdk.StackProps
 	if props != nil {
 		stackProps = props.Props
@@ -89,12 +92,16 @@ func NewGirlsWhoCodeHostingStack(scope constructs.Construct, id string, props *G
 
 	// The existing FrontendStack is deployed in us-east-1, as required by
 	// CloudFront for ACM certificates. Keep that deployment environment unchanged.
-	productionDomainNames := jsii.Strings(props.DomainName, "www."+props.DomainName)
-	productionCertificate := awscertificatemanager.NewCertificate(girlsWhoCodeHostingStack, jsii.String("GirlsWhoCodeProductionCertificate"), &awscertificatemanager.CertificateProps{
-		DomainName:              jsii.String(props.DomainName),
-		SubjectAlternativeNames: jsii.Strings("www." + props.DomainName),
-		Validation:              awscertificatemanager.CertificateValidation_FromDns(props.HostedZone),
-	})
+	var productionDomainNames *[]*string
+	var productionCertificate awscertificatemanager.Certificate
+	if hasCustomDomain {
+		productionDomainNames = jsii.Strings(props.DomainName, "www."+props.DomainName)
+		productionCertificate = awscertificatemanager.NewCertificate(girlsWhoCodeHostingStack, jsii.String("GirlsWhoCodeProductionCertificate"), &awscertificatemanager.CertificateProps{
+			DomainName:              jsii.String(props.DomainName),
+			SubjectAlternativeNames: jsii.Strings("www." + props.DomainName),
+			Validation:              awscertificatemanager.CertificateValidation_FromDns(props.HostedZone),
+		})
+	}
 
 	girlsWhoCodeProductionDistribution := awscloudfront.NewDistribution(girlsWhoCodeHostingStack, jsii.String("FrontendProduction"), &awscloudfront.DistributionProps{
 		Certificate:       productionCertificate,
@@ -117,18 +124,20 @@ func NewGirlsWhoCodeHostingStack(scope constructs.Construct, id string, props *G
 		},
 	})
 
-	productionAliasTarget := awsroute53.RecordTarget_FromAlias(awsroute53targets.NewCloudFrontTarget(girlsWhoCodeProductionDistribution))
-	for _, record := range []struct{ id, name string }{
-		{"GirlsWhoCodeProductionApex", props.DomainName},
-		{"GirlsWhoCodeProductionWww", "www." + props.DomainName},
-	} {
-		awsroute53.NewARecord(girlsWhoCodeHostingStack, jsii.String(record.id+"A"), &awsroute53.ARecordProps{
-			Zone: props.HostedZone, RecordName: jsii.String(record.name), Target: productionAliasTarget,
-		})
-		// The existing production distribution has IPv6 enabled (CDK's default).
-		awsroute53.NewAaaaRecord(girlsWhoCodeHostingStack, jsii.String(record.id+"AAAA"), &awsroute53.AaaaRecordProps{
-			Zone: props.HostedZone, RecordName: jsii.String(record.name), Target: productionAliasTarget,
-		})
+	if hasCustomDomain {
+		productionAliasTarget := awsroute53.RecordTarget_FromAlias(awsroute53targets.NewCloudFrontTarget(girlsWhoCodeProductionDistribution))
+		for _, record := range []struct{ id, name string }{
+			{"GirlsWhoCodeProductionApex", props.DomainName},
+			{"GirlsWhoCodeProductionWww", "www." + props.DomainName},
+		} {
+			awsroute53.NewARecord(girlsWhoCodeHostingStack, jsii.String(record.id+"A"), &awsroute53.ARecordProps{
+				Zone: props.HostedZone, RecordName: jsii.String(record.name), Target: productionAliasTarget,
+			})
+			// The existing production distribution has IPv6 enabled (CDK's default).
+			awsroute53.NewAaaaRecord(girlsWhoCodeHostingStack, jsii.String(record.id+"AAAA"), &awsroute53.AaaaRecordProps{
+				Zone: props.HostedZone, RecordName: jsii.String(record.name), Target: productionAliasTarget,
+			})
+		}
 	}
 
 	awscdk.NewCfnOutput(girlsWhoCodeHostingStack, jsii.String("CloudFront_Production_Info"), &awscdk.CfnOutputProps{
