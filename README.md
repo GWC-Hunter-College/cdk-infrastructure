@@ -12,7 +12,7 @@ The frontend application source is maintained separately. This repository contai
 
 This first modularization phase organizes the repository in the following order:
 
-1. **[Hosting](hosting/README.md)** — independent static-frontend hosting. [`hosting/aws/`](hosting/aws/README.md) contains the AWS CDK implementation adapted from the standalone Website-Hosting-Iac repository.
+1. **[Hosting](hosting/README.md)** — independent static-frontend hosting. [`hosting/aws/`](hosting/aws/) contains the AWS CDK implementation adapted from the standalone Website-Hosting-Iac repository.
 2. **[Database](database/README.md)** — the future provider-independent MySQL module. This phase creates its boundary and documentation only.
 3. **[API](api/README.md)** — the future provider-independent backend application used by frontend clients to access data. This phase creates its boundary and documentation only.
 4. **[Infrastructure](infrastructure/README.md)** — provider-specific deployment concerns. [`infrastructure/aws/`](infrastructure/aws/README.md) is the future AWS boundary for the API and database, while [`infrastructure/legacy/`](infrastructure/legacy/README.md) preserves the current integrated implementation.
@@ -45,7 +45,7 @@ No database or API implementation was migrated in this phase. No production depl
 ## Documentation and safety
 
 - Start with the [legacy implementation guide](infrastructure/legacy/README.md) for the current build, architecture, API, database, and deployment documentation.
-- Read the [hosting AWS guide](hosting/aws/README.md) before synthesizing the extracted hosting stacks.
+- Read the [hosting guide](hosting/README.md) before synthesizing the extracted hosting stacks.
 - Do not deploy either CDK application solely because its files moved. Existing S3 buckets, CloudFront distributions, IAM resources, DNS, certificates, and CloudFormation stack ownership must be reviewed before any production migration.
 
 ## License
